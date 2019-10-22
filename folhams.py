@@ -1,9 +1,12 @@
 import os
+import logging
+import itertools
 from pathlib import Path
 import sqlite3
 import models
 
 _caminho_arquivo = os.getcwd() + "/arquivos/"
+logging.basicConfig(level=logging.INFO)
 
 # 
 def buscar_arquivos():
@@ -79,13 +82,13 @@ def tratar_arquivo(arquivo):
     
 @models.db_session
 def inserir_tab_arquivo_folha(dados, arquivos_local):
-    print('Folhas de pagamentos para analisar e inserir: ', len(dados), ' ...')
+    logging.info('Folhas de pagamentos para analisar e inserir: {}'.format(len(dados))) 
     for i, arquivo in enumerate(dados):
-        print(' ---> Analisando e inserindo {} registros... Aguarde'.format(len(arquivo[1:])))
+        logging.info("Analisando e inserindo {} registros... Aguarde".format(len(arquivo[1:]))) 
         tam = tratar_arquivo(arquivo)
         # insert na tabela folha / arquivo
         models.Arquivo(arquivo_nome=arquivos_local[i], quantidade_registros=tam)
-        print(' ------ > Inserido folha: ', arquivos_local[i])
+        logging.info("Inserida a folha: {}".format(arquivos_local[i]))
 
 
 @models.db_session
@@ -109,7 +112,7 @@ def analiseOrgao(ano, mes, complementar, decimo_terceiro):
         and c.decimo_terceiro == decimo_terceiro))
 
     # se foi inserido pula...
-    print("\t consulta tabela: controle: ", v)
+    logging.info("Consulta tabela: Controle {}".format(v))
     if v:
         return 
 
@@ -121,15 +124,11 @@ def analiseOrgao(ano, mes, complementar, decimo_terceiro):
     
     # nao retornou resultado [None] na busca
     if not orgaos:
-        print("\t Orgao: nao retornou resultado [None] na busca ")
+        logging.info("Orgão: nao retornou resultado na busca")
         return
 
-    print("| orgaos: ")
-    [print(i, end=", ") for i in orgaos]
-
     for orgao in orgaos:
-        
-        print("| consultando e inserindo dados do orgão: ", orgao)
+        logging.info("Consultando e inserindo dados do orgão: {}".format(orgao))
 
         d = {'orgao': orgao,
 
@@ -169,8 +168,6 @@ def analiseOrgao(ano, mes, complementar, decimo_terceiro):
             f.decimo_terceiro == decimo_terceiro), distinct=False)  
         }
 
-        # print(d) # debug
-
         # testar se não retornou nada
         # insere no banco tabela AnaliseOrgao
         if d['soma_outras'] and d['soma_pos'] and d['soma_rem_base']:
@@ -186,8 +183,7 @@ def analiseOrgao(ano, mes, complementar, decimo_terceiro):
                 complementar = complementar,
                 decimo_terceiro = decimo_terceiro)
         else:
-            print("\t [2] nao retornou nada na busca")
-
+            logging.info("Query SQL Não retornou resultados ")
     # inserir controle
     models.Controle(tabela="AnaliseOrgao",
         competencia_ano = ano,
@@ -198,52 +194,24 @@ def analiseOrgao(ano, mes, complementar, decimo_terceiro):
 
 def gerar_analiseOrgao():
 
-    meses = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    anos = ['2018', '2019']
+    meses = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')
+    anos = ('2018', '2019')
+    # gera com as combinacoes de folha com decimo terceiro e/ou complementar
+    for decimo_terceiro, complementar in itertools.product((True, False), repeat=2):
+        logging.info("Decimo terceiro: {} | complementar: {}".format(decimo_terceiro, complementar))
+        for ano in anos:
+            for mes in meses:
+                logging.info("ANO: {} | MES: {}".format(ano, mes))
+                analiseOrgao(ano, mes, complementar, decimo_terceiro)
 
-    complementar = False
-    decimo_terceiro = False
-
-    print("Decimo terceiro: {} | complementar: {}".format(decimo_terceiro, complementar))
-    for ano in anos:
-        for mes in meses:
-            print("|\t ANO: {} | MES: {}".format(ano, mes))
-            analiseOrgao(ano, mes, complementar, decimo_terceiro)
-
-    complementar = True
-    decimo_terceiro = True
-
-    print("Decimo terceiro: {} | complementar: {}".format(decimo_terceiro, complementar))
-    for ano in anos:
-        for mes in meses:
-            print("|\t ANO: {} | MES: {}".format(ano, mes))
-            analiseOrgao(ano, mes, complementar, decimo_terceiro)
-
-    complementar = True
-    decimo_terceiro = False
-
-    print("Decimo terceiro: {} | complementar: {}".format(decimo_terceiro, complementar))
-    for ano in anos:
-        for mes in meses:
-            print("|\t ANO: {} | MES: {}".format(ano, mes))
-            analiseOrgao(ano, mes, complementar, decimo_terceiro)
-
-    complementar = False
-    decimo_terceiro = True
-
-    print("Decimo terceiro: {} | complementar: {}".format(decimo_terceiro, complementar))
-    for ano in anos:
-        for mes in meses:
-            print("|\t ANO: {} | MES: {}".format(ano, mes))
-            analiseOrgao(ano, mes, complementar, decimo_terceiro)
 
 #######################################################################
 if __name__ == '__main__':
-    print("Analise da folha de pagamento do Estado do Mato Grosso do Sul")
-    print("\t\t Jhonathan P. Banczek | jpbanczek@gmail.com | 2019")
-    
-    print('''uscando arquivos da folha de pagamento do Estado no armazenamento local...
-        Local padrão: folha-ms/arquivos/''')
+
+    logging.info("Analise da folha de pagamento do Estado do Mato Grosso do Sul")    
+    logging.info("Buscando arquivos da folha de pagamento do Estado no armazenamento local...")
+    logging.info("Local padrão: folha-ms/arquivos/")
+
     atualizar_db()
     gerar_analiseOrgao()
-    print('finalizado')
+    logging.info("Concluído!")
