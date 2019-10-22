@@ -1,12 +1,12 @@
 # folha-ms
 
-Análise da Folha de Pagamento do Estado do Mato Grosso do Sul.  
+Análise da **Folha de Pagamento** do Estado do Mato Grosso do Sul.  
 Dados obtidos pelo [portal da transparência](http://www.transparencia.ms.gov.br/). 
 Dados Abertos: <http://www.dados.ms.gov.br/>  
 *Dados a partir de 2018.*
 
-* Python 3.7.4
-* Sqlite 3
+* [Python 3.7.4](https://python.org)
+* [Sqlite 3](https://www.sqlite.org/index.html)
 * [Pony ORM](https://github.com/ponyorm/pony)
 
 
@@ -14,6 +14,15 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 [em desenvolvimento]
 
 ## Descrição dos Dados
+
+- [Tabela: Folha](#tabela:-folha)
+- [Tabela: Analise](#tabela:-analise)
+- Análise:
+	- [Por situação](#por-situacao)
+	- [Por orgão.](#por-orgao)
+	- [Por vínculo.](#por-vinculo)
+	- [Por cargo.](#por-cargo)
+
 
 ### Tabela: Folha
 
@@ -34,7 +43,6 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 | complementar | bool | True |
 | decimo_terceiro | bool | True |
 | remuneracao_base | float | True |
-| -------------------------------------- | -------- | ------------------ |
 
 
 ### Tabela: Analise
@@ -65,7 +73,6 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 | INATIVO - APOSENTADO
 | ATIVO
 | INATIVO - PENSÃO POR MORTE
-| ---------------------------
 
 
 ### por orgão:
@@ -109,7 +116,6 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 |SECC
 |GOVERNADORIA
 |ESCOLAGOV
-|--------------------|
 
 
 ### por vínculo:
@@ -127,7 +133,6 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 |CONTRATO PUBLICO
 |CVMRR (CONVOCADO DA RESERVA)
 |SERVIDOR REGIME CLT
-| ------------------------------
 
 
 ### por cargo: 
@@ -367,4 +372,3 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 |ANALISTA DE RECURSOS HÍDRICOS
 |TÉC ADMIN. APOIO GESTÃO REC. HIDRICOS
 |CURSO DE FORMAÇÃO
-|----------------------------------------
