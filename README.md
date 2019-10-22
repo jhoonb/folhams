@@ -18,9 +18,9 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 - [Tabela: Folha](#tabela:-folha)
 - [Tabela: Analise](#tabela:-analise)
 - Análise:
-	- [Por situação](#por-situacao)
-	- [Por orgão.](#por-orgao)
-	- [Por vínculo.](#por-vinculo)
+	- [Por situação](#por-situaçao)
+	- [Por orgão.](#por-orgão)
+	- [Por vínculo.](#por-vínculo)
 	- [Por cargo.](#por-cargo)
 
 
@@ -61,7 +61,6 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 | somatorio\_remuneracao\_apos_deducoes | float | True |
 | complementar | bool | True |
 | decimo_terceiro | bool | True |
-| -------------------------------------- | -------- | ------------------ |
 
 
 ## Análise 
