@@ -1,7 +1,7 @@
 # folhams
 
 Análise da **Folha de Pagamento** do Estado do Mato Grosso do Sul.  
-Dados obtidos pelo [portal da transparência](http://www.transparencia.ms.gov.br/). 
+Dados obtidos no [portal da transparência](http://www.transparencia.ms.gov.br/).  
 Dados Abertos: <http://www.dados.ms.gov.br/>  
 *Dados a partir de 2018.*
 
@@ -61,7 +61,7 @@ Observação sobre os campos:
 | campo | tipo | obrigatório |
 | --- | ----------- | -------------
 | tipo | str | True |
-| valor | str | True |
+| descricao | str | True |
 | competencia_ano | str | True |
 | competencia_mes | str | True |
 | media\_remuneracao_base | float | True |
@@ -72,6 +72,11 @@ Observação sobre os campos:
 | somatorio\_remuneracao\_apos_deducoes | float | True |
 | complementar | bool | True |
 | decimo_terceiro | bool | True |
+
+
+Observação sobre os campos:
+- tipo: 'orgao', 'vinculo', 'cargo', 'situacao'
+- descricao: os dados listas abaixo para cada tipo.
 
 
 ## Análise 
