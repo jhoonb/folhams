@@ -1,4 +1,4 @@
-# folha-ms
+# folhams
 
 Análise da **Folha de Pagamento** do Estado do Mato Grosso do Sul.  
 Dados obtidos pelo [portal da transparência](http://www.transparencia.ms.gov.br/). 
@@ -15,16 +15,19 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 
 ## Descrição dos Dados
 
-- [Tabela: Folha](#tabela:-folha)
-- [Tabela: Analise](#tabela:-analise)
+- [Tabela: Folha](#tabela-folha)
+- [Tabela: Analise](#tabela-analise)
 - Análise:
-	- [Por situação](#por-situaçao)
+	- [Por situação](#por-situação)
 	- [Por orgão.](#por-orgão)
 	- [Por vínculo.](#por-vínculo)
 	- [Por cargo.](#por-cargo)
 
 
-### Tabela: Folha
+### Tabela Folha
+
+Relação Mensal das informações referentes à remuneração dos servidores públicos – ativos e inativos –, dos empregados públicos e dos pensionistas da Administração Pública Direta e Indireta.
+
 
 | campo | tipo | obrigatório |
 | --- | ----------- | -------------
@@ -44,8 +47,16 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 | decimo_terceiro | bool | True |
 | remuneracao_base | float | True |
 
+Observação sobre os campos:
 
-### Tabela: Analise
+- **Remuneração Base:** (remuneracao_base) Composta pelas parcelas remuneratórias correspondentes ao subsídio, vencimento ou soldo, acrescidas das vantagens pecuniárias pessoais, das vantagens inerentes ao cargo e das vantagens percebidas em caráter permanente.
+
+- **Outras Verbas:** (outras_verbas) Valores pagos em decorrência de acertos de meses anteriores, exercícios anteriores e decisões judiciais, bem como aqueles referentes à gratificação natalina, ao adicional de férias e às verbas indenizatórias.
+
+- **Remuneração Após Deduções Obrigatórias:** (remuneracao\_apos\_deducoes_obrigatorias) Valor da remuneração, descontadas a dedução do teto constitucional e as deduções obrigatórias.
+
+
+### Tabela Analise
 
 | campo | tipo | obrigatório |
 | --- | ----------- | -------------
