@@ -28,52 +28,6 @@ class Folha(db.Entity):
     complementar = Required(bool)
     decimo_terceiro = Required(bool)
 
-"""
-class AnaliseOrgao(db.Entity):
-    codigo = PrimaryKey(int, auto=True)
-    orgao = Required(str)
-    competencia_ano = Required(str)
-    competencia_mes = Required(str)
-    media_remuneracao_base = Required(float)
-    media_outras_verbas = Required(float)
-    media_remuneracao_apos_deducoes = Required(float)    
-    somatorio_remuneracao_base = Required(float)
-    somatorio_outras_verbas = Required(float)
-    somatorio_remuneracao_apos_deducoes = Required(float)  
-    complementar = Required(bool)
-    decimo_terceiro = Required(bool)
-
-
-class AnaliseCargo(db.Entity):
-    codigo = PrimaryKey(int, auto=True)
-    cargo = Required(str)
-    competencia_ano = Required(str)
-    competencia_mes = Required(str)
-    media_remuneracao_base = Required(float)
-    media_outras_verbas = Required(float)
-    media_remuneracao_apos_deducoes = Required(float)    
-    somatorio_remuneracao_base = Required(float)
-    somatorio_outras_verbas = Required(float)
-    somatorio_remuneracao_apos_deducoes = Required(float)  
-    complementar = Required(bool)
-    decimo_terceiro = Required(bool)
-
-
-class AnaliseVinculo(db.Entity):
-    codigo = PrimaryKey(int, auto=True)
-    vinculo = Required(str)
-    competencia_ano = Required(str)
-    competencia_mes = Required(str)
-    media_remuneracao_base = Required(float)
-    media_outras_verbas = Required(float)
-    media_remuneracao_apos_deducoes = Required(float)    
-    somatorio_remuneracao_base = Required(float)
-    somatorio_outras_verbas = Required(float)
-    somatorio_remuneracao_apos_deducoes = Required(float)  
-    complementar = Required(bool)
-    decimo_terceiro = Required(bool)
-"""
-
 
 class Analise(db.Entity):
     codigo = PrimaryKey(int, auto=True)

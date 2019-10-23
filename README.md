@@ -76,7 +76,7 @@ Observação sobre os campos:
 
 Observação sobre os campos:
 - tipo: 'orgao', 'vinculo', 'cargo', 'situacao'
-- descricao: os dados listas abaixo para cada tipo.
+- descricao: os dados abaixo para cada tipo.
 
 
 ## Análise 
