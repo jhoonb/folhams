@@ -1,9 +1,12 @@
 import os
 from pony.orm import *
 
+
 _caminho_bd = os.getcwd() + "/bd_folha.sqlite"
 
+
 db = Database("sqlite", _caminho_bd, create_db=True)
+
 
 class Arquivo(db.Entity):
     codigo = PrimaryKey(int, auto=True)
