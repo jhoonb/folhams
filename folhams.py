@@ -2,7 +2,6 @@ import os
 import logging
 import itertools
 from pathlib import Path
-import sqlite3
 import models
 
 # caminho para os arquivos da folha de pagamento (.txt)
@@ -279,7 +278,8 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.orgao == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -300,7 +300,8 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.orgao == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -329,14 +330,16 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.vinculo == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['soma_rem_base'] = models.sum((f.remuneracao_base for f in models.Folha 
+            d['soma_rem_base'] = models.sum((f.remuneracao_base 
+                for f in models.Folha 
                 if f.vinculo == t
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -350,7 +353,8 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.vinculo == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -379,7 +383,8 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.cargo == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -400,7 +405,8 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.cargo == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -429,7 +435,8 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.situacao == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -450,7 +457,8 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
                 and f.complementar == complementar 
                 and f.decimo_terceiro == decimo_terceiro), distinct=False)
 
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias for f in models.Folha 
+            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
+                for f in models.Folha 
                 if f.situacao == t 
                 and f.competencia_ano == ano 
                 and f.competencia_mes == mes 
@@ -479,7 +487,7 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
             logging.info("Query SQL Não retornou resultados ")
 
     # inserir controle
-    models.Controle(tipo=tipo,
+    models.Controle(tipo= tipo,
         competencia_ano = ano,
         competencia_mes = mes,
         complementar = complementar,
@@ -488,13 +496,16 @@ def analise(tipo, ano, mes, complementar, decimo_terceiro):
 
 def gerar_analise(tipo):
 
+    meses = ('01', '02', '03', '04', '05', '06', '07', 
+        '08', '09', '10', '11', '12')
+    
     # [TODO] inserir na tupla anos, os próximos anos para análise.
-    meses = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')
     anos = ('2018', '2019')
 
     # gera com as combinacoes de folha com decimo terceiro e/ou complementar
     for decimo_terceiro, complementar in itertools.product((True, False), repeat=2):
-        logging.info("Decimo terceiro: {} | complementar: {}".format(decimo_terceiro, complementar))
+        logging.info("Decimo terceiro: {} | \
+complementar: {}".format(decimo_terceiro, complementar))
         for ano in anos:
             logging.info("tipo: {}".format(tipo))
             for mes in meses:
@@ -502,85 +513,17 @@ def gerar_analise(tipo):
                 analise(tipo, ano, mes, complementar, decimo_terceiro)
 
 
-@models.db_session
-def gerar_grafico():
-
-    import locale
-
-    query = models.select((a.tipo, a.descricao, 
-        a.competencia_ano, 
-        a.somatorio_remuneracao_apos_deducoes) for a in models.Analise)
-
-
-    ativo = sum([i[1] for i in query if i[0] == 'ATIVO'])
-    inativo_morte = sum([i[1] for i in query if i[0] == 'INATIVO - PENSÃO POR MORTE'])
-    inativo_aposentado = sum([i[1] for i in query if i[0] == 'INATIVO - APOSENTADO'])
-
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-
-    print("ativo: ", locale.currency(ativo, grouping=True, symbol=None))
-    print("inativo_morte: ", locale.currency(inativo_morte, grouping=True, symbol=None))
-    print("inativo_aposentado", locale.currency(inativo_aposentado, grouping=True, symbol=None))
-    print("total inativos: ", locale.currency(inativo_aposentado+inativo_morte, grouping=True, symbol=None)) 
-
-    
-    # pie = pygal.Pie()
-    # pie.title = 'Situação - total de remuneração em 2018 (todos os orgãos)'
-    # # -- loop
-    # pie.add(situacao, valor)
-    # # --
-    # pie.render_to_file('/home/jhoonb/situacao.svg') 
-
-"""
-refatorar: 
-- gerar_grafico()
-- gerar_analise(tipo)
-- analise(tipo, ano, mes, complementar, decimo_terceiro)
-"""
 if __name__ == '__main__':
 
     logging.info("Análise da folha de pagamento do Estado do Mato Grosso do Sul")    
     logging.info("Buscando arquivos da folha de pagamento do Estado no armazenamento local...")
     logging.info("Local padrão: folha-ms/arquivos/")
 
-    # gerar_analise()
-
     # [TODO] se tiver algum outro tipo para a query, inserir.
-    # tipos = ('orgao', 'vinculo', 'cargo', 'situacao')
+    tipos = ('orgao', 'vinculo', 'cargo', 'situacao')
 
-    menu = '''
-                 menu 
-    # [1] Inserir dados da folha de pagamentos no banco
-    # [2] Efetuar análise por vínculo
-    # [3] Efetuar análise por orgão
-    # [4] Efetuar análise por cargo
-    # [5] Efetuar análise situação
-    # [6] Todas as ações acima.
-    # [7] Gerar gráficos (svg) das análises.
-    # [8] Gerar página estática (html). 
-    # [0] Sair. 
-
-    '''
-
-    while True:
-        opc = int(input(menu))
-        if opc == 0:
-            break
-        elif opc == 1:
-            atualizar_db()
-        elif opc == 2:
-            gerar_analise('vinculo')
-        elif opc == 3:
-            gerar_analise('orgao')
-        elif opc == 4:
-            gerar_analise('cargo')
-        elif opc == 5:
-            gerar_analise('situacao')
-        elif opc == 6:
-            atualizar_db()
-            for tipo in ('orgao', 'vinculo', 'cargo', 'situacao'):
-                gerar_analise(tipo)
-        else:
-            log.info('Não implementado.')
+    atualizar_db()
+    for tipo in tipos:
+        gerar_analise(tipo)
 
     logging.info("Concluído!")

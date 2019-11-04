@@ -1,5 +1,8 @@
 # folhams
 
+[em desenvolvimento]
+
+
 Análise da **Folha de Pagamento** do Estado do Mato Grosso do Sul.  
 Dados obtidos no [portal da transparência](http://www.transparencia.ms.gov.br/).  
 Dados Abertos: <http://www.dados.ms.gov.br/>  
@@ -10,8 +13,53 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 * [Pony ORM](https://github.com/ponyorm/pony)
 
 
+## Modo de usar:
 
-[em desenvolvimento]
+Execute o programa ```folhams.py ``` no terminal
+
+```
+$ python folhams.py
+```
+
+Ao executar o programa, todos os dados
+que estão na pasta ```/arquivos/ ```
+são inseridos no banco de dados através da
+estrutura descrita abaixo na tabela: Folha.
+
+Após essa inserção inicial, o programa
+irá gerar dados para popular a tabela: Analise. 
+
+E efetuará cálculos de média e somatório
+para os valores da folha: 
+
+- remuneracao_base (somatório e média)
+- outras_verbas (somatório e média)
+- remuneracao\_apos_deducoes\_obrigatorias (somatório e média)
+
+
+Essas análises serão feitas de maneira agrupada, por:
+
+- Situação
+- Orgão
+- Vínculo
+- Cargo
+
+
+### [TODO] 
+
+Para a melhor visualização da análise será implementada a geração de gráficos usando a biblioteca [*pygal.*](https://github.com/Kozea/pygal/tree/master/pygal/graph)
+
+
+### O que esta análise visa responder?
+
+O objetivo dessa ferramenta é de fornecer
+de maneira clara e intuitiva a evolução dos 
+gastos com a folha de pagamento,
+comparando as competências por mês e ano,
+agrupados por cargo, situação, orgão, vínculo...
+
+
+
 
 ## Descrição dos Dados
 
