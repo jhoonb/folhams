@@ -1,529 +1,131 @@
 import os
-import logging
 import itertools
 from pathlib import Path
-import models
+from typing import List
+from models import FolhaData
 
-# caminho para os arquivos da folha de pagamento (.txt)
-caminho_arquivo = os.getcwd() + "/arquivos/"
-
-# configurar o log
-logging.basicConfig(format='folhams -> %(asctime)s: %(message)s', 
-    level=logging.DEBUG, 
-    datefmt='%d/%m/%Y %I:%M:%S')
+import controllers
 
 
-def str2float(d):
-    """
-    str2float exemplo: "34,5" -> 34.5
-    tipo: d (str)
-    retorno: d (float) 
-    """
-    d = d.replace('"', '')
-    d = d.replace(',', '.')
-    return float(d)
+def link_to_path_files(folder: str = "/arquivos/") -> str:
+    """caminho para os arquivos da folha de pagamento (.txt)"""
+    path = f'{os.getcwd()}{folder}'
+    return path
 
 
-def e_complementar(s):
-    return True if 'COMP' in s else False
+def get_files_name() -> List[str]:
+    p = Path(link_to_path_files())
+    files_name = [i.name for i in p.iterdir() if i.is_file()]
+    return files_name
 
 
-def e_decimo_terceiro(s):
-    return True if '13' in s[4:] else False
+def read_file(file_name: str) -> List[str]:
+    """Retorna arquivo, cada elemento da lista é uma str do arquivo"""
+
+    path_file = f'{link_to_path_files()}{file_name}'
+    with open(path_file, 'r') as file:
+        arquivo = file.readlines()
+    return arquivo
 
 
-def arquivo_nome(s):
-    """
-    arquivo_nomes: retorna apenas o nome+extensão do arquivo
-    exemplo: /home/user/folhams/arquivos/folha-01-2018.txt
-        -> "folha-01-2018.txt"
-    retorno: str 
-    """
-    return str(s).split("/")[-1]
+def read_all_files(files_name: str) -> List[List[str]]:
+    arquivos = [read_file(file_name) for file_name in files_name]
+    return arquivos
 
 
-def buscar_arquivos():
-    """
-    buscar_arquivos retorna um objeto generator
-    com o nome de todos os arquivo dentro do diretorio
-    retorno: generator
-    """
-    p = Path(caminho_arquivo)
-    return (arquivo_nome(i) for i in p.iterdir() if i.is_file())
+def get_files_online() -> None:
+    # [TODO]
+    pass
 
 
-def ler_arquivo(arquivo_nome):
-    """
-    ler_arquivo retorna todo conteudo do arquivo
-    em uma lista, cada linha do arquivo é um list de str
-    """
-    with open(caminho_arquivo + arquivo_nome, 'r') as f:
-        d = f.readlines()
-    return d
+def update_database(online: bool = False) -> bool:
 
+    arquivos_db = controllers.select_arquivo()
+    # [TODO] 
+    if online:
+        pass
+        #files_online = get_files_online()
+    local_files_name = get_files_name()
+    # mantem na lista só os arquivos
+    # que não estão no banco de dados
+    local_files_name = [i for i in local_files_name if i not in arquivos_db]
+    files = read_all_files(local_files_name)
 
-def todos_os_arquivos(arquivos_local):
-    """
-    todos_os_arquivos retorna uma lista todos os dados
-    obtidos dos arquivos
-    retorno: list
-    """
-    return [ler_arquivo(arquivo_nome) for arquivo_nome in arquivos_local]
+    print("".join(["Folhas de pagamentos para analisar e/ou ",
+                   f"inserir: {len(files)}"]))
 
+    print("*" * 70)
 
-@models.db_session
-def insert_tabela_folha(dados_folhas):
-    """
-    insert_tabela_folha insere todos os dicts 
-    (no formato feito por tratar_arquivo())
-    na tabela do banco 'Folha'
-    retorno: quantidade de inserts (int)
-    """
-
-    for folha in dados_folhas:
-        models.Folha(competencia_mes=folha['competencia-mes'],
-            competencia_ano=folha['competencia-ano'],
-            orgao=folha['orgao'],
-            situacao=folha['situacao'],
-            nome=folha['nome'],
-            cpf=folha['cpf'],
-            cargo=folha['cargo'],
-            remuneracao_base=folha['base'],
-            outras_verbas=folha['outras'],
-            remuneracao_apos_deducoes_obrigatorias=folha['apos'],
-            vinculo=folha['vinculo'],
-            matricula=folha['matricula'],
-            complementar=folha['complementar'],
-            decimo_terceiro=folha['decimo_terceiro'])
-
-    return len(dados_folhas)
-
-
-@models.db_session
-def insert_tabela_arquivo(nome, quantidade):
-    """
-    insert_tabela_arquivo insere
-    na tabela do banco 'Arquivo' o nome do
-    arquivo e a quantidade de itens inserido em Folha
-    """
-    models.Arquivo(arquivo_nome=nome, quantidade_registros=quantidade)
-
-
-def tratar_arquivo(arquivo):
-    """
-    tratar_arquivo retorna uma lista com elementos do
-    tipo dict, cada elemento é uma linha do arquivo
-    modelo do dict 
-    folha = { 'mes': str,
-    'competencia-ano' = str,
-    'orgao' = str
-    'situacao' = str
-    'nome' = str
-    'cpf' = str
-    'cargo' = str
-    'base' = float
-    'outras' = float
-    'apos' = float
-    'vinculo' = str
-    'matricula' = str
-    'complementar' = bool
-    'decimo_terceiro' = bool
-    retorno: dados_folhas (list)
-    """
-
-    dados_folhas = []
-    # ignora cabeçalho do arquivo [1:]
-    for linha in arquivo[1:]:
-
-        folha = {}
-        s = linha.split(";")
-        mes, ano = s[0].split("/")
-        folha['competencia-mes'] = mes
-        folha['competencia-ano'] = ano[:4]
-        folha['orgao'] = s[1]
-        folha['situacao'] = s[2]
-        folha['nome'] = s[3]
-        folha['cpf'] = s[4]
-        folha['cargo'] = s[5]
-        folha['base'] = str2float(s[6])
-        folha['outras'] = str2float(s[7])
-        folha['apos'] = str2float(s[8])
-        folha['vinculo'] = s[9]
-        folha['matricula'] = s[10]
-        folha['complementar'] = e_complementar(ano[4:])
-        folha['decimo_terceiro'] = e_decimo_terceiro(ano[4:])
-
-        dados_folhas.append(folha)
-
-    return dados_folhas
-
-
-@models.db_session
-def select_tabela_arquivo_nomes():
-    """
-    select_tabela_arquivo_nomes retorna uma lista contendo
-    todos os valores do campo arquivo_nome da tabela Arquivo
-    retorno: list
-    """
-    return list(models.select(c.arquivo_nome for c in models.Arquivo))
-
-
-def atualizar_db():
-    """
-    atualizar_db verifica quais arquivos no disco local
-    ainda não foram inseridos no banco de dados,
-    captura-os, efetua os tratamentos e insere no banco
-    """
-    arquivos_db = select_tabela_arquivo_nomes()
-    arquivos_local = buscar_arquivos()
-    arquivos_local = [i for i in arquivos_local if i not in arquivos_db]
-    dados_arquivos = todos_os_arquivos(arquivos_local)
-
-    logging.info('Folhas de pagamentos para \
-analisar e/ou inserir: {}'.format(len(dados_arquivos)))
+    if not files:
+        return False
 
     # insere na tabela folha
-    for i, arquivo in enumerate(dados_arquivos):
-        
-        logging.info("Analisando e inserindo {} \
-registros... Aguarde".format(len(arquivo[1:])))
+    for i, arquivo in enumerate(files):
+        print(f"Analisando e inserindo {len(arquivo)-1} registros")
+        # insert na tabela folha
+        folha_data = FolhaData(local_files_name[i])
+        folha_data.append(arquivo)
+        quantidade = len(folha_data)
 
-        # insert na tebela folha
-        qnt = insert_tabela_folha(tratar_arquivo(arquivo))
-        
-        logging.info("{} registros inseridos na tabela Folha".format(qnt))
+        controllers.insert_folha(folha_data)
+
+        print(f"{quantidade} registros inseridos na tabela Folha")
 
         # insert na tabela Arquivo
-        insert_tabela_arquivo(arquivos_local[i], qnt)
-        logging.info("Inserida a folha: {}".format(arquivos_local[i]))
-
-
-## analise de dados
-@models.db_session
-def analise(tipo, ano, mes, complementar, decimo_terceiro):
-
-    # verifica se jã não foi inserido
-    v = list(models.select(c.codigo for c in models.Controle 
-        if c.tipo == tipo 
-        and c.competencia_ano == ano 
-        and c.competencia_mes == mes 
-        and c.complementar == complementar
-        and c.decimo_terceiro == decimo_terceiro))
-
-    # se foi inserido pula...
-    if v: return 
-
-    # se for folha de 13º, valida apenas se for mês 12,
-    # do contrário não faz query
-    if decimo_terceiro == True and mes != '12': return
-
-    # todos os tipos ['orgao', 'vinculo', 'cargo', 'situacao'] - distinct
-    tipos = None
-    if tipo == 'orgao':
-        tipos = list(models.select(f.orgao for f in models.Folha 
-            if f.competencia_ano == ano 
-            and f.competencia_mes == mes 
-            and f.complementar == complementar
-            and f.decimo_terceiro == decimo_terceiro))
-    elif tipo == 'vinculo':
-        tipos = list(models.select(f.vinculo for f in models.Folha 
-            if f.competencia_ano == ano 
-            and f.competencia_mes == mes 
-            and f.complementar == complementar
-            and f.decimo_terceiro == decimo_terceiro))
-    elif tipo == 'cargo':
-        tipos = list(models.select(f.cargo for f in models.Folha 
-            if f.competencia_ano == ano 
-            and f.competencia_mes == mes 
-            and f.complementar == complementar
-            and f.decimo_terceiro == decimo_terceiro))
-    elif tipo == 'situacao':
-        tipos = list(models.select(f.situacao for f in models.Folha 
-            if f.competencia_ano == ano 
-            and f.competencia_mes == mes 
-            and f.complementar == complementar
-            and f.decimo_terceiro == decimo_terceiro))
-    else:
-        logging.info("Tipo {} NÃO IMPLEMENTADO".format(tipo))
-
-    # nao retornou resultado [None] na busca
-    if not tipos: return
-
-    for t in tipos:
-        logging.info("Consultando e inserindo dados: {}".format(t))
-
-        d = {}
-        d['tipo'] = tipo
-        d['descricao'] = t
-
-        if tipo == 'orgao':
-            d['qnt_registros'] = models.count((f for f in models.Folha 
-                if f.orgao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_rem_base'] = models.avg((f.remuneracao_base for f in models.Folha 
-                if f.orgao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_outras'] = models.avg((f.outras_verbas for f in models.Folha 
-                if f.orgao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.orgao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_rem_base'] = models.sum((f.remuneracao_base for f in models.Folha 
-                if f.orgao == t
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_outras'] = models.sum((f.outras_verbas for f in models.Folha 
-                if f.orgao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.orgao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-        elif tipo == 'vinculo':
-            d['qnt_registros'] = models.count((f for f in models.Folha 
-                if f.vinculo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_rem_base'] = models.avg((f.remuneracao_base for f in models.Folha 
-                if f.vinculo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_outras'] = models.avg((f.outras_verbas for f in models.Folha 
-                if f.vinculo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.vinculo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_rem_base'] = models.sum((f.remuneracao_base 
-                for f in models.Folha 
-                if f.vinculo == t
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_outras'] = models.sum((f.outras_verbas for f in models.Folha 
-                if f.vinculo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.vinculo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-        elif tipo == 'cargo':
-            d['qnt_registros'] = models.count((f for f in models.Folha 
-                if f.cargo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_rem_base'] = models.avg((f.remuneracao_base for f in models.Folha 
-                if f.cargo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_outras'] = models.avg((f.outras_verbas for f in models.Folha 
-                if f.cargo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.cargo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_rem_base'] = models.sum((f.remuneracao_base for f in models.Folha 
-                if f.cargo == t
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_outras'] = models.sum((f.outras_verbas for f in models.Folha 
-                if f.cargo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.cargo == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-        
-        elif tipo == 'situacao':
-            d['qnt_registros'] = models.count((f for f in models.Folha 
-                if f.situacao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_rem_base'] = models.avg((f.remuneracao_base for f in models.Folha 
-                if f.situacao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_outras'] = models.avg((f.outras_verbas for f in models.Folha 
-                if f.situacao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['media_pos'] = models.avg((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.situacao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_rem_base'] = models.sum((f.remuneracao_base for f in models.Folha 
-                if f.situacao == t
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_outras'] = models.sum((f.outras_verbas for f in models.Folha 
-                if f.situacao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-            d['soma_pos'] = models.sum((f.remuneracao_apos_deducoes_obrigatorias 
-                for f in models.Folha 
-                if f.situacao == t 
-                and f.competencia_ano == ano 
-                and f.competencia_mes == mes 
-                and f.complementar == complementar 
-                and f.decimo_terceiro == decimo_terceiro), distinct=False)
-
-        else:
-            logging.info("Tipo {} NÃO IMPLEMENTADO".format(tipo))
-
-        # testar se não retornou nada
-        # insere no banco tabela Analise
-        if d['soma_outras'] and d['soma_pos'] and d['soma_rem_base']:
-            models.Analise(tipo = d['tipo'],
-                descricao = d['descricao'], 
-                competencia_ano = ano,
-                competencia_mes = mes, 
-                media_remuneracao_base = d['media_rem_base'],
-                media_outras_verbas = d['media_outras'], 
-                media_remuneracao_apos_deducoes = d['media_pos'],
-                somatorio_remuneracao_base = d['soma_rem_base'], 
-                somatorio_outras_verbas = d['soma_outras'],
-                somatorio_remuneracao_apos_deducoes = d['soma_pos'],
-                complementar = complementar,
-                decimo_terceiro = decimo_terceiro)
-        else:
-            logging.info("Query SQL Não retornou resultados ")
-
-    # inserir controle
-    models.Controle(tipo= tipo,
-        competencia_ano = ano,
-        competencia_mes = mes,
-        complementar = complementar,
-        decimo_terceiro = decimo_terceiro)
+        controllers.insert_arquivo(folha_data.name_file, quantidade)
+        print(f"Inserida a folha: {folha_data.name_file}")
+    
+    return True
 
 
 def gerar_analise(tipo):
 
-    meses = ('01', '02', '03', '04', '05', '06', '07', 
-        '08', '09', '10', '11', '12')
-    
+    meses = ('01', '02', '03', '04', '05', '06', '07',
+             '08', '09', '10', '11', '12')
+
     # [TODO] inserir na tupla anos, os próximos anos para análise.
     anos = ('2018', '2019')
 
     # gera com as combinacoes de folha com decimo terceiro e/ou complementar
-    for decimo_terceiro, complementar in itertools.product((True, False), repeat=2):
-        logging.info("Decimo terceiro: {} | \
-complementar: {}".format(decimo_terceiro, complementar))
+    for decimo_terceiro, complementar in \
+            itertools.product((True, False), repeat=2):
+
+        print(f"Decimo terceiro: {decimo_terceiro}"
+              f"| complementar: {complementar}")
+
         for ano in anos:
-            logging.info("tipo: {}".format(tipo))
+            print(f"tipo: {tipo}")
             for mes in meses:
-                logging.info("ANO: {} | MES: {}".format(ano, mes))
-                analise(tipo, ano, mes, complementar, decimo_terceiro)
+                print(f"ANO: {ano} | MES: {mes}")
+                controllers.analise(tipo, ano, mes,
+                                    complementar, decimo_terceiro)
+
+
+def main() -> None:
+    # [TODO] se tiver algum outro tipo para a query, inserir.
+    tipos = (
+        'orgao', 'vinculo',
+        'cargo', 'situacao'
+    )
+    # atualizar
+    if not update_database():
+        return 
+
+    for tipo in tipos:
+        gerar_analise(tipo)
 
 
 if __name__ == '__main__':
 
-    logging.info("Análise da folha de pagamento do Estado do Mato Grosso do Sul")    
-    logging.info("Buscando arquivos da folha de pagamento do Estado no armazenamento local...")
-    logging.info("Local padrão: folha-ms/arquivos/")
+    print("*" * 70)
+    print("".join(["\nAnálise da folha de pagamento do ",
+                   "Estado do Mato Grosso do Sul\n",
+                   "Buscando arquivos da folha de pagamento ",
+                   "do Estado no armazenamento local...\n",
+                   f"Local padrão: {link_to_path_files()}"]))
 
-    # [TODO] se tiver algum outro tipo para a query, inserir.
-    tipos = ('orgao', 'vinculo', 'cargo', 'situacao')
+    print("*" * 70)
+    main()
 
-    atualizar_db()
-    for tipo in tipos:
-        gerar_analise(tipo)
-
-    logging.info("Concluído!")
+    print("Concluído!")
+    print("*" * 70)
