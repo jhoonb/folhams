@@ -102,8 +102,6 @@ celerybeat-schedule
 *.db3
 *.db
 *.sqlite3
-# shelve 
-*.shelve
 
 # Environments
 .env
@@ -131,5 +129,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-# arquivos da folha de pagamento
-*.txt

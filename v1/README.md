@@ -1,33 +1,34 @@
 # folhams
 
-[em desenvolvimento]
+[versão 1 - descontinuada]
+
 
 Análise da **Folha de Pagamento** do Estado do Mato Grosso do Sul.  
 Dados obtidos no [portal da transparência](http://www.transparencia.ms.gov.br/).  
 Dados Abertos: <http://www.dados.ms.gov.br/>  
 *Dados a partir de 2018.*
 
-* [Python 3.8.1](https://python.org)
-* [Shelve Python object persistence](https://docs.python.org/3/library/shelve.html)
+* [Python 3.7.4](https://python.org)
+* [Sqlite 3](https://www.sqlite.org/index.html)
+* [Pony ORM](https://github.com/ponyorm/pony)
+
 
 ## Modo de usar:
 
-### Teste
-
-Execute o teste:
+Execute o programa ```folhams.py ``` no terminal
 
 ```
-$ python -m unittest -v test.py
+$ python folhams.py
 ```
 
-### Análise:
+Ao executar o programa, todos os dados
+que estão na pasta ```/arquivos/ ```
+são inseridos no banco de dados através da
+estrutura descrita abaixo na tabela: Folha.
 
-```
-$ python main.py
-```
+Após essa inserção inicial, o programa
+irá gerar dados para popular a tabela: Analise. 
 
-
-[TODO] ...
 E efetuará cálculos de média e somatório
 para os valores da folha: 
 
@@ -64,8 +65,6 @@ agrupados por cargo, situação, orgão, vínculo...
 
 - [folhams](#folhams)
 	- [Modo de usar:](#modo-de-usar)
-		- [Teste](#teste)
-		- [Análise:](#an%c3%a1lise)
 		- [[TODO]](#todo)
 		- [O que esta análise visa responder?](#o-que-esta-an%c3%a1lise-visa-responder)
 	- [Descrição dos Dados](#descri%c3%a7%c3%a3o-dos-dados)
