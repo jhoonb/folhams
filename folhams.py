@@ -1,26 +1,22 @@
 import os
-import shelve
-from typing import List
-from dataclasses import dataclass
-from pathlib import Path, PosixPath
+from datetime import datetime
+from typing import List, Set
+from pathlib import Path
 
 import requests
+import models
 
-__all__ = ['url_gov',
-           'get_online',
-           'get_page_text',
-           'link_to_path_files',
-           'read_file',
-           'get_all_files',
-           'Arquivo'
-           ]
+
+__all__ = [
+    'url_gov', 'get_online', 'get_page_text', 'link_to_path_files',
+    'read_file', 'get_all_files', 'insert_tipo', 'FolhaMS'
+]
+
 
 # [TODO]
 ###########################################################
 #                   scraping web
 ###########################################################
-
-
 def url_gov() -> str:
     url = 'http://www.dados.ms.gov.br/dataset/folha-de-pagamento'
     return url
@@ -31,9 +27,8 @@ def get_page_text() -> str:
     text = r.text
     return text
 
+
 # [TODO]
-
-
 def get_online() -> bool:
     return True
 
@@ -47,235 +42,196 @@ def link_to_path_files() -> str:
     return path
 
 
-def read_file(file: PosixPath) -> List[str]:
+def read_file(file: str) -> List[str]:
     """Retorna arquivo, cada elemento da lista é uma str do arquivo"""
-    with file.open() as f:
+    with open(file) as f:
         data = f.readlines()
     # ignora o cabeçalho do arquivo
     return data[1:]
 
 
-def get_all_files() -> List[PosixPath]:
-    p = Path(link_to_path_files())
-    files = [file for file in p.iterdir() if file.is_file()]
+def get_all_files(path: str = None) -> Set[str]:
+    path = path if path else link_to_path_files()
+    p = Path(path)
+    files = {str(file) for file in p.iterdir() if file.is_file()}
     return files
 
 
 ###########################################################
-#                       models data
+#                       utils
 ###########################################################
-def _str2float(s: str) -> float:
+def str2date(s: str) -> datetime:
+    return datetime.strptime(s, '%m-%Y')
+
+
+def namefromfile(s: str) -> str:
+    """ 
+    /home/users/folder/folha-09-2019.txt' -> '09-2019'
+    'folha-06-2018.txt' -> '06-2018'
+
+    """
+    s = s.split("/")[-1]
+    s = s.replace("folha-", "")
+    s = s.replace(".txt", "")
+    return s
+
+
+def str2float(s: str) -> float:
     s = s.strip('"')
     s = s.strip("'")
     s = s.replace(",", ".")
     return float(s)
 
 
-@dataclass
-class _Competencia:
-    mes: str
-    ano: str
-    tipo: str  # 'COMP' -> Complementar | '13' -> décimo 13º | '' -> nenhum
+###########################################################
+#                       db
+###########################################################
+@models.orm.db_session
+def insert_tipo() -> None:
+    tipos = models.orm.select(t.descricao for t in models.Tipo).distinct()
+
+    cargo = models.orm.select(i.cargo for i in models.Item
+                              if i.cargo not in tipos).distinct()
+
+    vinculo = models.orm.select(i.vinculo for i in models.Item
+                                if i.vinculo not in tipos).distinct()
+
+    situacao = models.orm.select(i.situacao for i in models.Item
+                                 if i.situacao not in tipos).distinct()
+
+    orgao = models.orm.select(i.orgao for i in models.Item
+                              if i.orgao not in tipos).distinct()
+
+    cont = 0
+    for i in cargo:
+        models.Tipo(tipo='cargo', descricao=i)
+        cont += 1
+    print('cargo: ', cont)
+
+    cont = 0
+    for i in vinculo:
+        models.Tipo(tipo='vinculo', descricao=i)
+        cont += 1
+    print('vinculo: ', cont)
+
+    cont = 0
+    for i in situacao:
+        models.Tipo(tipo='situacao', descricao=i)
+        cont += 1
+    print('situacao: ', cont)
+
+    cont = 0
+    for i in orgao:
+        models.Tipo(tipo='orgao', descricao=i)
+        cont += 1
+    print('orgao: ', cont)
 
 
-class _FolhaItem:
-
-    def __init__(self, item: str) -> None:
-
+@models.orm.db_session
+def insert_db_itens(folha: models.Folha, file: str) -> int:
+    with open(file) as f:
+        data = f.readlines()
+    for item in data[1:]:
         item = item.strip("\n ")
         item = item.split(";")
-        if len(item) != 11:
-            raise ValueError(f"item com valor formato inválido: {item}")
-
-        self.competencia = self._competencia(item[0])
-        self.orgao = item[1]
-        self.situacao = item[2]
-        self.nome = item[3]
-        self.cpf = item[4]
-        self.cargo = item[5]
-        self.rem_base = _str2float(item[6])
-        self.outras_verbas = _str2float(item[7])
-        self.rem_apos_deducoes_obrigatorias = _str2float(item[8])
-        self.vinculo = item[9]
-        self.matricula = item[10]
-
-    def _competencia(self, valor) -> _Competencia:
-        '''
-        '12/2018 (13º)' -> Competencia('12', '2018', '13')
-        '12/2018 (COMP)' -> Competencia('12', '2018', 'COMP')
-        '12/2018' -> Competencia('12', '2018', '')
-        '''
-        mes, ano = valor.split("/")
-        ano = ano[:4]
-
-        if 'COMP' in valor:
-            return _Competencia(mes, ano, 'COMP')
-        elif '13º' in valor:
-            return _Competencia(mes, ano, '13')
-        else:
-            return _Competencia(mes, ano, '')
+        itemmod = models.Item(folha=folha,
+                              competencia=item[0],
+                              orgao=item[1],
+                              situacao=item[2],
+                              nome=item[3],
+                              cargo=item[5],
+                              remuneracao_base=str2float(item[6]),
+                              outras_verbas=str2float(item[7]),
+                              remuneracao_apos_deducoes_obrigatorias=str2float(
+                                  item[8]),
+                              vinculo=item[9],
+                              matricula=item[10])
+    return len(data[1:])
 
 
-class _Folha:
+@models.orm.db_session
+def init_db(files: Set[str]) -> None:
 
-    def __init__(self, data: List[str]) -> None:
-        self.itens = []
-        self._insert(data)
+    f = set(models.orm.select(f.link for f in models.Folha))
+    files = files - f
 
-    def _insert(self, data) -> None:
-        for item in data:
-            folha_item = _FolhaItem(item)
-            self.itens.append(folha_item)
-
-    def __len__(self):
-        return len(self.itens)
-
-    def filter_nome(self, nome: str) -> List[_FolhaItem]:
-        itens = [item for item in self.itens if nome == item.nome]
-        return itens
-
-    def filter_orgao(self, orgao: str) -> List[_FolhaItem]:
-        itens = [item for item in self.itens if orgao == item.orgao]
-        return itens
-
-    def filter_situacao(self, situacao: str) -> List[_FolhaItem]:
-        itens = [item for item in self.itens if situacao == item.situacao]
-        return itens
-
-    def filter_cargo(self, cargo: str) -> List[_FolhaItem]:
-        itens = [item for item in self.itens if cargo == item.cargo]
-        return itens
-
-    def filter_vinculo(self, vinculo: str) -> List[_FolhaItem]:
-        itens = [item for item in self.itens if vinculo == item.vinculo]
-        return itens
+    for file in files:
+        print("inserindo file: ", file)
+        folha = models.Folha(arquivo_nome=namefromfile(file),
+                             quantidade_registros=0,
+                             link=file,
+                             gerado_analise=False)
+        qnt = insert_db_itens(folha, file)
+        print("itens inseridos: ", qnt)
+        folha.quantidade_registros = qnt
+        models.db.commit()
 
 
-class Arquivo:
+# @models.orm.db_session
+# def analise() -> None:
+#     folhas = models.orm.select(f for f in models.Folha if not f.gerado_analise)
+#     for folha in folhas:
+#         itens = models.orm.select(i for i in models.Item if i.folha == folha)
 
-    def __init__(self, file: PosixPath):
-        self.descricao = file.name
-        data = read_file(file)
-        self.folha = _Folha(data)
-        data = None
-
-    def filter_nome(self, nome: str) -> List[_FolhaItem]:
-        return self.folha.filter_nome(nome)
-
-    def filter_orgao(self, orgao: str) -> List[_FolhaItem]:
-        return self.folha.filter_orgao(orgao)
-
-    def filter_situacao(self, situacao: str):
-        return self.folha.filter_situacao(situacao)
-
-    def filter_cargo(self, cargo: str) -> List[_FolhaItem]:
-        return self.folha.filter_cargo(cargo)
-
-    def filter_vinculo(self, vinculo: str) -> List[_FolhaItem]:
-        return self.folha.filter_vinculo(vinculo)
+#         print(folha.link, ' - ', len(itens))
 
 
-@dataclass
-class Analise:
-    tipo: str
-    descricao: str
-    competencia: _Competencia
-    media_remuneracao_base: float
-    media_outras_verbas: float
-    media_remuneracao_apos_deducoes: float
-    somatorio_remuneracao_base: float
-    somatorio_outras_verbas: float
-    somatorio_remuneracao_apos_deducoes: float
-
-###########################################################
-#                       análises
-###########################################################
-
-
-def gerar_analise(itens: List[_FolhaItem]) -> Analise:
-
-    s_rem_base = 0
-    s_outras_verbas = 0
-    s_rem_apos_deducoes = 0
-
-    for item in itens:
-        s_rem_base += item.rem_base
-        s_outras_verbas += item.outras_verbas
-        s_rem_apos_deducoes += item.rem_apos_deducoes_obrigatorias
-    else:
-        raise ValueError(f"sem itens para análise: {itens}")
-
-    m_rem_base = s_rem_base / len(itens)
-    m_outras_verbas = s_outras_verbas / len(itens)
-    m_rem_apos_deducoes = s_rem_apos_deducoes / len(itens)
-    return Analise('',
-                   '',
-                   '',
-                   m_rem_base,
-                   m_outras_verbas,
-                   m_rem_apos_deducoes,
-                   s_rem_base,
-                   s_outras_verbas,
-                   s_rem_apos_deducoes)
-
-
-def analisar_por_tipo(arquivo: Arquivo, tipo: str) -> Analise:
-    print(arquivo.descricao)
-    print(len(arquivo.folha))
-    if tipo == 'cargo':
-        analise = gerar_analise(arquivo.filter_cargo(tipo))
-    elif tipo == 'orgao':
-        analise = gerar_analise(arquivo.filter_orgao(tipo))
-    elif tipo == 'vinculo':
-        analise = gerar_analise(arquivo.filter_vinculo(tipo))
-    elif tipo == 'situacao':
-        analise = gerar_analise(arquivo.filter_situacao(tipo))
-    else:
-        raise AttributeError(f"tipo {tipo} Não definido")
-    analise.tipo = tipo
-    return analise
-
-
-def create_database(files: List[PosixPath]) -> None:
-
-    with shelve.open('database.shelve') as db:
-
-        # insere apenas os que faltam
-        files = [file for file in files
-                 if file.name not in db.keys()]
-
-        for file in files:
-            print(f"arquivo: {file.name}")
-            arquivo = Arquivo(file)
-            db[arquivo.descricao] = arquivo
-            # db.sync()
-        else:
-            print('Nenhum arquivo para inserir')
-
-
-def check_database_analise() -> bool:
-    with shelve.open('analise.shelve') as db_analise:
-        valor = db_analise.get("tipos", None)
-    return True if valor else False
-
-
-def create_database_analise() -> None:
-
-    # [TODO]
-    if not check_database_analise():
-        tipos = {
-            'orgao', 'vinculo',
-            'cargo', 'situacao'
+class FolhaMS:
+    def __init__(self):
+        self._query = None
+        self.res = {
+            'media_rem_base': 0.0,
+            'media_outras_verbas': 0.0,
+            'media_rem_apos': 0.0,
+            'soma_rem_base': 0.0,
+            'soma_outras_verbas': 0.0,
+            'soma_rem_apos': 0.0
         }
 
-    with shelve.open('database.shelve') as db:
+    def select(self, query) -> None:
 
-        with shelve.open('analise.shelve') as db_analise:
-            for k, arquivo in db.items():
-                ktipos = {}
-                for tipo in tipos:
-                    dados = analisar_por_tipo(arquivo, tipo)
-                    ktipos[tipo] = dados
-                db_analise[k] = ktipos
-                db[arquivo.descricao] = arquivo
-                # db.sync()
+        # [TODO] insert here 
+        keys = ('cargo', 'situacao', 'orgao', 
+        'competencia', 'nome', 'vinculo', 'matricula')
+
+        if any((i for i in query.keys() if i not in keys)):
+            raise AttributeError('param sql invalid ')
+
+        nova_query = ''
+
+        for k, v in query.items():
+            if v:
+                nova_query += f' i.{k} == "{v}" and'
+
+        nova_query = nova_query.rstrip(' and')
+        sql = ' select i.id, i.remuneracao_base, i.outras_verbas,  '
+        sql += 'i.remuneracao_apos_deducoes_obrigatorias from item i '
+        sql += f'where ({nova_query})'
+        self._query = sql
+
+
+    def execute(self) -> None:
+        with models.orm.db_session:
+            itens = models.Item.select_by_sql(self._query)
+        
+        if qnt := len(itens):
+            s = sum([item.remuneracao_base for item in itens])
+            self.res['soma_rem_base'] = s
+            self.res['media_rem_base'] = s/qnt
+
+            s = sum([item.outras_verbas for item in itens])
+            self.res['soma_outras_verbas'] = s
+            self.res['media_outras_verbas'] = s/qnt
+
+            s = sum([item.remuneracao_apos_deducoes_obrigatorias for item in itens])
+            self.res['soma_rem_apos'] = s
+            self.res['media_rem_apos'] = s/qnt
+        else:
+            self.res = {
+            'media_rem_base': 0.0,
+            'media_outras_verbas': 0.0,
+            'media_rem_apos': 0.0,
+            'soma_rem_base': 0.0,
+            'soma_outras_verbas': 0.0,
+            'soma_rem_apos': 0.0
+        }

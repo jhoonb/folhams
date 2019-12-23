@@ -8,7 +8,9 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 *Dados a partir de 2018.*
 
 * [Python 3.8.1](https://python.org)
-* [Shelve Python object persistence](https://docs.python.org/3/library/shelve.html)
+* [Sqlite 3](https://www.sqlite.org/index.html)
+* [Pony ORM](https://github.com/ponyorm/pony)
+
 
 ## Modo de usar:
 
@@ -20,11 +22,75 @@ Execute o teste:
 $ python -m unittest -v test.py
 ```
 
-### Análise:
+### Gerar/atualizar Banco de Dados:
 
 ```
-$ python main.py
+$ python database.py
 ```
+
+### Consultas
+
+```python
+
+from folhams import FolhaMS
+
+folha = FolhaMS()
+
+query = {
+	'competencia': '08/2019',
+	'nome': 'JOAO DAMASCENO',
+	'cargo': 'PROFESSOR',
+	'orgao': 'SED',
+	'situacao': 'ATIVO',
+	'vinculo': '',
+	'matricula': '123456789'
+}
+
+# gera a query
+folha.select(query)
+# executa
+folha.execute()
+# resultado é um dict
+print(folha.res)
+print(folha.res['media_rem_apos'])
+
+```
+
+Objeto dict **res**:
+
+```python
+res = { 
+	'media_rem_base': 0.0, # media da remuneracao base
+	'media_outras_verbas': 0.0, # media de outras verbas
+	'media_rem_apos': 0.0, # media da remunerção após deduções obrigatórias
+	'soma_rem_base': 0.0, # soma da remuneração base
+	'soma_outras_verbas': 0.0, # soma outras verbas
+	'soma_rem_apos': 0.0 # soma da remuneração após deduções obrigatórias
+	}
+```
+
+A query pode conter 1 ou mais chaves, todas são concatenas como o operador **and** na consulta:
+
+```python
+
+from folhams import FolhaMS
+
+folha = FolhaMS()
+
+query = {
+	'competencia': '08/2019',
+	'orgao': 'SED'
+}
+# gera a query
+folha.select(query)
+# executa
+folha.execute()
+
+folha.res
+```
+
+## Modelo de dados
+
 
 
 [TODO] ...
@@ -36,28 +102,18 @@ para os valores da folha:
 - remuneracao\_apos_deducoes\_obrigatorias (somatório e média)
 
 
-Essas análises serão feitas de maneira agrupada, por:
+Essas análises podem ser feitas de maneira agrupada, por:
 
 - Situação
 - Orgão
 - Vínculo
 - Cargo
-
+- Nome
+- Competência
 
 ### [TODO] 
 
 Para a melhor visualização da análise será implementada a geração de gráficos usando a biblioteca [*pygal.*](https://github.com/Kozea/pygal/tree/master/pygal/graph)
-
-
-### O que esta análise visa responder?
-
-O objetivo dessa ferramenta é de fornecer
-de maneira clara e intuitiva a evolução dos 
-gastos com a folha de pagamento,
-comparando as competências por mês e ano,
-agrupados por cargo, situação, orgão, vínculo...
-
-
 
 
 ## Descrição dos Dados
@@ -65,9 +121,10 @@ agrupados por cargo, situação, orgão, vínculo...
 - [folhams](#folhams)
 	- [Modo de usar:](#modo-de-usar)
 		- [Teste](#teste)
-		- [Análise:](#an%c3%a1lise)
+		- [Gerar/atualizar Banco de Dados:](#geraratualizar-banco-de-dados)
+		- [Consultas](#consultas)
+	- [Modelo de dados](#modelo-de-dados)
 		- [[TODO]](#todo)
-		- [O que esta análise visa responder?](#o-que-esta-an%c3%a1lise-visa-responder)
 	- [Descrição dos Dados](#descri%c3%a7%c3%a3o-dos-dados)
 		- [Tabela Folha](#tabela-folha)
 		- [Tabela Analise](#tabela-analise)
@@ -83,23 +140,23 @@ agrupados por cargo, situação, orgão, vínculo...
 Relação Mensal das informações referentes à remuneração dos servidores públicos – ativos e inativos –, dos empregados públicos e dos pensionistas da Administração Pública Direta e Indireta.
 
 
-| campo | tipo | obrigatório |
-| --- | ----------- | -------------
-| competencia_ano | str | True |
-| competencia_mes | str | True |
-| orgao | str | True |
-| situacao | str | True |
-| nome | str | True |
-| cpf | str | True |
-| cargo | str | True |
-| remuneracao_base | float | True |
-| outras_verbas | float | True |
-| remuneracao\_apos_deducoes\_obrigatorias | float | True |
-| vinculo | str | True |
-| matricula | str | True |
-| complementar | bool | True |
-| decimo_terceiro | bool | True |
-| remuneracao_base | float | True |
+| campo                                    | tipo  | obrigatório |
+| ---------------------------------------- | ----- | ----------- |
+| competencia_ano                          | str   | True        |
+| competencia_mes                          | str   | True        |
+| orgao                                    | str   | True        |
+| situacao                                 | str   | True        |
+| nome                                     | str   | True        |
+| cpf                                      | str   | True        |
+| cargo                                    | str   | True        |
+| remuneracao_base                         | float | True        |
+| outras_verbas                            | float | True        |
+| remuneracao\_apos_deducoes\_obrigatorias | float | True        |
+| vinculo                                  | str   | True        |
+| matricula                                | str   | True        |
+| complementar                             | bool  | True        |
+| decimo_terceiro                          | bool  | True        |
+| remuneracao_base                         | float | True        |
 
 Observação sobre os campos:
 
@@ -112,20 +169,20 @@ Observação sobre os campos:
 
 ### Tabela Analise
 
-| campo | tipo | obrigatório |
-| --- | ----------- | -------------
-| tipo | str | True |
-| descricao | str | True |
-| competencia_ano | str | True |
-| competencia_mes | str | True |
-| media\_remuneracao_base | float | True |
-| media\_outras_verbas | float | True |
-| media\_remuneracao\_apos_deducoes | float | True |
-| somatorio\_remuneracao_base | float | True |
-| somatorio\_outras_verbas | float | True |
-| somatorio\_remuneracao\_apos_deducoes | float | True |
-| complementar | bool | True |
-| decimo_terceiro | bool | True |
+| campo                                 | tipo  | obrigatório |
+| ------------------------------------- | ----- | ----------- |
+| tipo                                  | str   | True        |
+| descricao                             | str   | True        |
+| competencia_ano                       | str   | True        |
+| competencia_mes                       | str   | True        |
+| media\_remuneracao_base               | float | True        |
+| media\_outras_verbas                  | float | True        |
+| media\_remuneracao\_apos_deducoes     | float | True        |
+| somatorio\_remuneracao_base           | float | True        |
+| somatorio\_outras_verbas              | float | True        |
+| somatorio\_remuneracao\_apos_deducoes | float | True        |
+| complementar                          | bool  | True        |
+| decimo_terceiro                       | bool  | True        |
 
 
 Observação sobre os campos:
