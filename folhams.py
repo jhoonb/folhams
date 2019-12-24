@@ -9,7 +9,8 @@ import models
 
 __all__ = [
     'url_gov', 'get_online', 'get_page_text', 'link_to_path_files',
-    'read_file', 'get_all_files', 'insert_tipo', 'FolhaMS'
+    'read_file', 'get_all_files', 'insert_tipo', 'FolhaMS', 'select_nome',
+    'select_cargo', 'select_vinculo', 'select_orgao', 'select_situacao'
 ]
 
 
@@ -34,7 +35,7 @@ def get_online() -> bool:
 
 
 ###########################################################
-#                   manipulate files / dir
+#                   files / dir
 ###########################################################
 def link_to_path_files() -> str:
     """caminho para os arquivos da folha de pagamento (.txt)"""
@@ -84,7 +85,7 @@ def str2float(s: str) -> float:
 
 
 ###########################################################
-#                       db
+#                       database
 ###########################################################
 @models.orm.db_session
 def insert_tipo() -> None:
@@ -135,16 +136,16 @@ def insert_db_itens(folha: models.Folha, file: str) -> int:
         item = item.strip("\n ")
         item = item.split(";")
         itemmod = models.Item(folha=folha,
-                              competencia=item[0],
-                              orgao=item[1],
-                              situacao=item[2],
-                              nome=item[3],
-                              cargo=item[5],
+                              competencia=item[0].upper(),
+                              orgao=item[1].upper(),
+                              situacao=item[2].upper(),
+                              nome=item[3].upper(),
+                              cargo=item[5].upper(),
                               remuneracao_base=str2float(item[6]),
                               outras_verbas=str2float(item[7]),
                               remuneracao_apos_deducoes_obrigatorias=str2float(
                                   item[8]),
-                              vinculo=item[9],
+                              vinculo=item[9].upper(),
                               matricula=item[10])
     return len(data[1:])
 
@@ -167,18 +168,61 @@ def init_db(files: Set[str]) -> None:
         models.db.commit()
 
 
-# @models.orm.db_session
-# def analise() -> None:
-#     folhas = models.orm.select(f for f in models.Folha if not f.gerado_analise)
-#     for folha in folhas:
-#         itens = models.orm.select(i for i in models.Item if i.folha == folha)
+###########################################################
+#                       util database
+###########################################################
+@models.orm.db_session
+def select_cargo() -> List[str]:
+    cargo = list(models.orm.select(
+        t.descricao for t in models.Tipo if t.tipo == 'cargo'))
+    cargo.sort()
+    return cargo
 
-#         print(folha.link, ' - ', len(itens))
+
+@models.orm.db_session
+def select_situacao() -> List[str]:
+    situacao = list(models.orm.select(
+        t.descricao for t in models.Tipo if t.tipo == 'situacao'))
+    situacao.sort()
+    return situacao
 
 
+@models.orm.db_session
+def select_orgao() -> List[str]:
+    orgao = list(models.orm.select(
+        t.descricao for t in models.Tipo if t.tipo == 'orgao'))
+    orgao.sort()
+    return orgao
+
+
+@models.orm.db_session
+def select_vinculo() -> List[str]:
+    vinculo = list(models.orm.select(
+        t.descricao for t in models.Tipo if t.tipo == 'vinculo'))
+    vinculo.sort()
+    return vinculo
+
+
+@models.orm.db_session
+def select_nome(situacao=None) -> List[str]:
+    if situacao:
+        nome = list(models.orm.select(
+            i.nome for i in models.Item 
+            if i.situacao == situacao).distinct())
+    else:
+        nome = list(models.orm.select(i.nome for i in models.Item).distinct())
+        
+    nome.sort()
+    return nome
+
+
+###########################################################
+#                       FolhaMS
+###########################################################
 class FolhaMS:
     def __init__(self):
         self._query = None
+        self.item = None
         self.res = {
             'media_rem_base': 0.0,
             'media_outras_verbas': 0.0,
@@ -226,6 +270,8 @@ class FolhaMS:
             s = sum([item.remuneracao_apos_deducoes_obrigatorias for item in itens])
             self.res['soma_rem_apos'] = s
             self.res['media_rem_apos'] = s/qnt
+
+            self.itens = itens
         else:
             self.res = {
             'media_rem_base': 0.0,
@@ -235,3 +281,4 @@ class FolhaMS:
             'soma_outras_verbas': 0.0,
             'soma_rem_apos': 0.0
         }
+            self.itens = None

@@ -1,3 +1,4 @@
+import sys
 import folhams
 
 def main() -> None:
@@ -13,7 +14,19 @@ def main() -> None:
     print("Encerrado")
 
 
+def create_file(file_name, data):
+    with open(file_name, 'w') as f:
+        for d in data:
+            f.write("|" + d)
+            f.write("\n")
+
+
 if __name__ == '__main__':
+    """
+    python database.py 
+    python database.py - main
+    python database.py -main -arquivos-tipos
+    """
 
     print("*" * 70)
     print("".join([
@@ -26,7 +39,15 @@ if __name__ == '__main__':
 
     print("*" * 70)
 
-    main()
+    if '-main' in sys.argv and '-arquivos-tipos' in sys.argv:
+        main()
+        create_file('orgao.txt', folhams.select_orgao())
+        create_file('situacao.txt', folhams.select_situacao())
+        create_file('cargo.txt', folhams.select_cargo())
+        create_file('vinculo.txt', folhams.select_vinculo())
+        create_file('nome.txt', folhams.select_nome())
+    else:
+        main()
 
     print("Concluído!")
     print("*" * 70)
