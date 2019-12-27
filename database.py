@@ -25,7 +25,7 @@ if __name__ == '__main__':
     """
     python database.py 
     python database.py - main
-    python database.py -main -arquivos-tipos
+    python database.py -main -gerar
     """
 
     print("*" * 70)
@@ -39,13 +39,13 @@ if __name__ == '__main__':
 
     print("*" * 70)
 
-    if '-main' in sys.argv and '-arquivos-tipos' in sys.argv:
+    if '-main' in sys.argv and '-gerar' in sys.argv:
         main()
-        create_file('orgao.txt', folhams.select_orgao())
-        create_file('situacao.txt', folhams.select_situacao())
-        create_file('cargo.txt', folhams.select_cargo())
-        create_file('vinculo.txt', folhams.select_vinculo())
-        create_file('nome.txt', folhams.select_nome())
+        tipos = ('orgao', 'situacao', 'cargo', 'vinculo')
+        for tipo in tipos:
+            create_file(f'{tipo}.csv', folhams.select_tipo(tipo))
+
+        create_file('nome.csv', folhams.select_nome())
     else:
         main()
 

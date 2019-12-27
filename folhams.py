@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 from typing import List, Set
 from pathlib import Path
@@ -84,6 +85,15 @@ def str2float(s: str) -> float:
     return float(s)
 
 
+def tojson(res, file_name: str) -> None:
+
+    try:
+        resj = json.dumps(res, indent=2)
+    except:
+        raise AttributeError('error.. json')
+
+    with open(file_name, 'w') as f:
+        f.write(resj)
 ###########################################################
 #                       database
 ###########################################################
@@ -172,35 +182,11 @@ def init_db(files: Set[str]) -> None:
 #                       util database
 ###########################################################
 @models.orm.db_session
-def select_cargo() -> List[str]:
-    cargo = list(models.orm.select(
-        t.descricao for t in models.Tipo if t.tipo == 'cargo'))
-    cargo.sort()
-    return cargo
-
-
-@models.orm.db_session
-def select_situacao() -> List[str]:
-    situacao = list(models.orm.select(
-        t.descricao for t in models.Tipo if t.tipo == 'situacao'))
-    situacao.sort()
-    return situacao
-
-
-@models.orm.db_session
-def select_orgao() -> List[str]:
-    orgao = list(models.orm.select(
-        t.descricao for t in models.Tipo if t.tipo == 'orgao'))
-    orgao.sort()
-    return orgao
-
-
-@models.orm.db_session
-def select_vinculo() -> List[str]:
-    vinculo = list(models.orm.select(
-        t.descricao for t in models.Tipo if t.tipo == 'vinculo'))
-    vinculo.sort()
-    return vinculo
+def select_tipo(tipo: str) -> List[str]:
+    r = list(models.orm.select(
+        t.descricao for t in models.Tipo if t.tipo == tipo))
+    r.sort()
+    return r 
 
 
 @models.orm.db_session

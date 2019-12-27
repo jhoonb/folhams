@@ -54,10 +54,10 @@ ou
 $ python database.py -main
 ```
 
-para gerar arquivo .txt com a lista de nomes, cargos, vínculos, situação, orgão:
+para gerar arquivo .csv com a lista de nomes, cargos, vínculos, situação, orgão:
 
 ```
-$ python database.py -main -arquivos-tipos
+$ python database.py -main -gerar
 ```
 
 
