@@ -16,6 +16,8 @@ class SQLArquivo:
 
     select = """SELECT {} FROM Arquivo {}"""
 
+    update = """ UPDATE Arquivo SET {} {}"""
+
 
 class SQLFolha:
     create = """CREATE TABLE IF NOT EXISTS "Folha" (
@@ -41,6 +43,8 @@ class SQLFolha:
 
     select = """SELECT {} FROM Folha {}"""
 
+    update = """ UPDATE Folha SET {} {}"""
+
 
 class SQLConsulta:
     create = """CREATE TABLE IF NOT EXISTS "Consulta" (
@@ -54,3 +58,5 @@ class SQLConsulta:
     delete = """DELETE FROM Consulta {};"""
 
     select = """SELECT {} from Consulta {};"""
+
+    update = """ UPDATE Consulta SET {} {};"""

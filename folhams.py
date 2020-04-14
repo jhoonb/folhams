@@ -92,13 +92,11 @@ def format_item(item: str) -> Tuple:
     )
 
 
-# ok
 def format_file(file):
     file = [format_item(i) for i in file]
     return file
 
 
-# ok
 def read_file(file: str) -> List[str]:
     """Retorna arquivo, cada elemento da 
     lista é uma str do arquivo
@@ -115,7 +113,6 @@ def read_file(file: str) -> List[str]:
     return data[1:]
 
 
-# ok
 def all_files(path: str = None) -> List[str]:
     """[summary]
 
@@ -141,7 +138,6 @@ def all_files(path: str = None) -> List[str]:
     return files
 
 
-# ok
 def db_all_files():
     arquivo = models.Arquivo()
     fields = "descricao"
@@ -152,7 +148,6 @@ def db_all_files():
     return dados
 
 
-# ok
 def get_new_files():
     # lista de arquivos local
     arquivos = all_files()
@@ -164,7 +159,6 @@ def get_new_files():
     return arquivos
 
 
-# ok
 def atualizar_banco() -> None:
     arquivos = get_new_files()
     # insere arquivo e folha no banco de dados
@@ -209,7 +203,7 @@ def db_maior_salario(
 
     ids = []
     fields = "id"
-    query = "{};{};{};{}"
+    query = "{};{};{};{};{}"
 
     folhadb = models.Folha()
     for orgao in orgaos:
@@ -219,10 +213,12 @@ def db_maior_salario(
         DESC LIMIT {quantidade}"""
         data = folhadb.select(fields, params)
         data = ";".join([str(i[0]) for i in data])
-        ids.append((query.format(fields, competencia, orgao, quantidade), data))
+        ids.append((
+            query.format(
+                fields, competencia, orgao, quantidade, remuneracao_por 
+                ), 
+                data))
     folhadb.close()
-    # from pprint import pprint
-    # pprint(ids)
     consultadb = models.Consulta()
     fields = "query"
     params = "WHERE 1"
@@ -235,6 +231,13 @@ def db_maior_salario(
     consultadb.insert(ids)
     consultadb.close()
     return len(ids)
+
+
+def gerar_dados():
+    consultadb = models.Consulta()
+    consultadb.close()
+
+
 
 # [TODO] outras opcoes
 if __name__ == "__main__":

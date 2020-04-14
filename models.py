@@ -22,6 +22,7 @@ class _DBModel:
         sql_insert: str = None,
         sql_select: str = None,
         sql_delete: str = None,
+        sql_update: str = None,
     ):
         self._db_path = os.path.join(os.path.dirname(__file__), db_name)
         self._conn = sqlite3.connect(self._db_path)
@@ -30,6 +31,7 @@ class _DBModel:
         self._sql_insert = sql_insert
         self._sql_select = sql_select
         self._sql_delete = sql_delete
+        self._sql_update = sql_update
         self._create()
 
     def _create(self):
@@ -64,23 +66,31 @@ class _DBModel:
             self._conn.rollback()
             raise _DBError("Problema ao deletar dados")
 
-    def execute_sql(self, sql, params):
-        try:
-            data = self._cursor.execute(sql, params)
-            data = data.fetchall()
-        except:
-            self._conn.rollback()
-            raise _DBError("Problema ao executar sql")
-        return data
+    # def execute_sql(self, sql, params):
+    #     try:
+    #         data = self._cursor.execute(sql, params)
+    #         data = data.fetchall()
+    #     except:
+    #         self._conn.rollback()
+    #         raise _DBError("Problema ao executar sql")
+    #     return data
 
-    def executemany_sql(self, sql, params):
+    # def executemany_sql(self, sql, params):
+    #     try:
+    #         data = self._cursor.executemany(sql, params)
+    #         data = data.fetchall()
+    #     except:
+    #         self._conn.rollback()
+    #         raise _DBError("Problema ao executar sql")
+    #     return data
+
+    def update(self, field_set, params):
         try:
-            data = self._cursor.executemany(sql, params)
-            data = data.fetchall()
+            sql = self._sql_update.format(field_set, params)
+            self._cursor.execute(sql)
         except:
             self._conn.rollback()
-            raise _DBError("Problema ao executar sql")
-        return data
+            raise _DBError("Problema ao atualizar tabela")
 
     def close(self):
         self._cursor.close()
@@ -96,6 +106,7 @@ class Arquivo(_DBModel):
             sql_insert=SQLArquivo.insert,
             sql_select=SQLArquivo.select,
             sql_delete=SQLArquivo.delete,
+            sql_update=SQLArquivo.update
         )
 
 
@@ -107,6 +118,7 @@ class Folha(_DBModel):
             sql_insert=SQLFolha.insert,
             sql_select=SQLFolha.select,
             sql_delete=SQLFolha.delete,
+            sql_update=SQLFolha.update
         )
 
 
@@ -118,4 +130,5 @@ class Consulta(_DBModel):
             sql_insert=SQLConsulta.insert,
             sql_select=SQLConsulta.select,
             sql_delete=SQLConsulta.delete,
+            sql_update=SQLConsulta.update
         )
