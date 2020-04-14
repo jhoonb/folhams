@@ -1,11 +1,20 @@
-var myHeading = document.querySelector("h1");
+function f1(link) {
 
-var json = require('./resultados/maiores_salarios.json'); //(with path)
+    console.log('exec: f1')
 
-if(myHeading) {
-    myHeading.textContent = 'opa'
-    console.log(json)
+    fetch(link).then(data => {
+      console.log(data)
+      //jsonresponse = JSON.parse(response);
+    }).catch(error => {
+      console.log(error)
+    });
+  
 }
-else {
-    alert("erro")
-}
+
+(function m(){console.log()})()
+
+// (function main() {
+//     console.log('entrou main')
+//     let link1 = "https://raw.githubusercontent.com/jhoonb/folhams/master/web/situacao_por_mes.json"
+//     f1(link1)
+// })()

@@ -5,6 +5,7 @@
 	- [Modo de usar:](#modo-de-usar)
 		- [Teste](#teste)
 		- [Gerar/atualizar Banco de Dados:](#geraratualizar-banco-de-dados)
+		- [As informações abaixo estão desatualizadas! [em desenvolvimento]](#as-informa%c3%a7%c3%b5es-abaixo-est%c3%a3o-desatualizadas-em-desenvolvimento)
 		- [Consultas](#consultas)
 	- [Modelo de dados](#modelo-de-dados)
 		- [Descrição dos Dados](#descri%c3%a7%c3%a3o-dos-dados)
@@ -16,7 +17,6 @@
 		- [orgão:](#org%c3%a3o)
 		- [vínculo:](#v%c3%adnculo)
 		- [cargo:](#cargo)
-		- [[TODO]](#todo)
 
 
 [em desenvolvimento]
@@ -28,7 +28,6 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 
 * [Python 3.8.1](https://python.org)
 * [Sqlite 3](https://www.sqlite.org/index.html)
-* [Pony ORM](https://github.com/ponyorm/pony)
 
 
 ## Modo de usar:
@@ -38,28 +37,17 @@ Dados Abertos: <http://www.dados.ms.gov.br/>
 Execute o teste:
 
 ```
-$ python -m unittest -v test.py
+$ python -m unittest -v
 ```
 
 ### Gerar/atualizar Banco de Dados:
 
 
 ```
-$ python database.py 
+$ python folhams.py update 
 ```
 
-ou
-
-```
-$ python database.py -main
-```
-
-para gerar arquivo .csv com a lista de nomes, cargos, vínculos, situação, orgão:
-
-```
-$ python database.py -main -gerar
-```
-
+### As informações abaixo estão desatualizadas! [em desenvolvimento]
 
 ### Consultas
 
@@ -505,8 +493,3 @@ Observação sobre os campos:
 |VICE-DIRETOR PRESIDENTE
 |VICE-GOVERNADOR
 |VICE-REITOR
-
-
-### [TODO] 
-
-Para a melhor visualização da análise será implementada a geração de gráficos usando a biblioteca [*pygal.*](https://github.com/Kozea/pygal/tree/master/pygal/graph)

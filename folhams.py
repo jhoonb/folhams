@@ -1,270 +1,251 @@
-import os
-import json
-from datetime import datetime
-from typing import List, Set
-from pathlib import Path
+# .  Copyright (C) 2020   Jhonathan P. Banczek (jpbanczek@gmail.com)
+#
 
-import requests
+import sys
+import os
+import hashlib
+import pathlib
+import datetime
+from typing import List, Dict, Set, Tuple
+
 import models
 
 
-__all__ = [
-    'url_gov', 'get_online', 'get_page_text', 'link_to_path_files',
-    'read_file', 'get_all_files', 'insert_tipo', 'FolhaMS', 'select_nome',
-    'select_cargo', 'select_vinculo', 'select_orgao', 'select_situacao'
-]
-
-
-# [TODO]
-###########################################################
-#                   scraping web
-###########################################################
-def url_gov() -> str:
-    url = 'http://www.dados.ms.gov.br/dataset/folha-de-pagamento'
-    return url
-
-
-def get_page_text() -> str:
-    r = requests.get(url_gov())
-    text = r.text
-    return text
-
-
-# [TODO]
-def get_online() -> bool:
-    return True
-
-
-###########################################################
-#                   files / dir
-###########################################################
-def link_to_path_files() -> str:
-    """caminho para os arquivos da folha de pagamento (.txt)"""
-    path = f'{os.getcwd()}/arquivos/'
-    return path
-
-
-def read_file(file: str) -> List[str]:
-    """Retorna arquivo, cada elemento da lista é uma str do arquivo"""
-    with open(file) as f:
-        data = f.readlines()
-    # ignora o cabeçalho do arquivo
-    return data[1:]
-
-
-def get_all_files(path: str = None) -> Set[str]:
-    path = path if path else link_to_path_files()
-    p = Path(path)
-    files = {str(file) for file in p.iterdir() if file.is_file()}
-    return files
-
-
-###########################################################
-#                       utils
-###########################################################
-def str2date(s: str) -> datetime:
-    return datetime.strptime(s, '%m-%Y')
-
-
-def namefromfile(s: str) -> str:
-    """ 
-    /home/users/folder/folha-09-2019.txt' -> '09-2019'
-    'folha-06-2018.txt' -> '06-2018'
-
-    """
-    s = s.split("/")[-1]
-    s = s.replace("folha-", "")
-    s = s.replace(".txt", "")
-    return s
-
-
 def str2float(s: str) -> float:
+    """ Converte o valor str (do arquivo .txt) para float
+
+    Arguments:
+        s {str} -- str no formato, ex.: '23,4'
+
+    Returns:
+        float -- 23.4
+    """
     s = s.strip('"')
     s = s.strip("'")
     s = s.replace(",", ".")
     return float(s)
 
 
-def tojson(res, file_name: str) -> None:
+def namefile2date(s: str) -> datetime.datetime:
+    """converte a str s para tipo datetime
 
-    try:
-        resj = json.dumps(res, indent=2)
-    except:
-        raise AttributeError('error.. json')
+    Arguments:
+        s {str} -- data: path/path/.../path/folha-01-2000.txt
 
-    with open(file_name, 'w') as f:
-        f.write(resj)
-###########################################################
-#                       database
-###########################################################
-@models.orm.db_session
-def insert_tipo() -> None:
-    tipos = models.orm.select(t.descricao for t in models.Tipo).distinct()
-
-    cargo = models.orm.select(i.cargo for i in models.Item
-                              if i.cargo not in tipos).distinct()
-
-    vinculo = models.orm.select(i.vinculo for i in models.Item
-                                if i.vinculo not in tipos).distinct()
-
-    situacao = models.orm.select(i.situacao for i in models.Item
-                                 if i.situacao not in tipos).distinct()
-
-    orgao = models.orm.select(i.orgao for i in models.Item
-                              if i.orgao not in tipos).distinct()
-
-    cont = 0
-    for i in cargo:
-        models.Tipo(tipo='cargo', descricao=i)
-        cont += 1
-    print('cargo: ', cont)
-
-    cont = 0
-    for i in vinculo:
-        models.Tipo(tipo='vinculo', descricao=i)
-        cont += 1
-    print('vinculo: ', cont)
-
-    cont = 0
-    for i in situacao:
-        models.Tipo(tipo='situacao', descricao=i)
-        cont += 1
-    print('situacao: ', cont)
-
-    cont = 0
-    for i in orgao:
-        models.Tipo(tipo='orgao', descricao=i)
-        cont += 1
-    print('orgao: ', cont)
+    Returns:
+        datetime -- mm-YYYY: 01-2000 
+    """
+    s = s.split("/")[-1]
+    s = s.replace("folha-", "")
+    s = s.replace(".txt", "")
+    s = s.strip()
+    return datetime.datetime.strptime(s, "%m-%Y")
 
 
-@models.orm.db_session
-def insert_db_itens(folha: models.Folha, file: str) -> int:
+def date2filename(dt: datetime.datetime, path: str) -> str:
+    """[summary] converte a data dt para caminho do arquivo
+    
+    Arguments:
+        dt {datetime.datetime} -- formato ex. datetime.datetime(2020, 2, 1, 0, 0)
+        path {str} -- ex.: /path/to/file/
+    
+    Returns:
+        str -- ex.: /path/to/file/folha-02-2020.txt
+    """
+    # 2018-10-01 00:00:00
+    file = "{}/folha-{}-{}.txt"
+    s = str(dt)
+    s = s.split(" ")[0]
+    s = s.split("-")
+    file = file.format(path, s[1], s[0])
+    file = file.replace("//", "/")
+    return file
+
+
+def format_item(item: str) -> Tuple:
+    item = item.split(";")
+
+    competencia = item[0]
+    orgao = item[1]
+    situacao = item[2]
+    nome = item[3]
+    cpf = item[4]
+    cargo = item[5]
+    rem_base = str2float(item[6])
+    outras_verbas = str2float(item[7])
+    rem_posdeducoes = str2float(item[8])
+    vinculo = item[9]
+    matricula = item[10]
+
+    return (
+        competencia,
+        orgao,
+        situacao,
+        nome,
+        cpf,
+        cargo,
+        rem_base,
+        outras_verbas,
+        rem_posdeducoes,
+        vinculo,
+        matricula,
+    )
+
+
+# ok
+def format_file(file):
+    file = [format_item(i) for i in file]
+    return file
+
+
+# ok
+def read_file(file: str) -> List[str]:
+    """Retorna arquivo, cada elemento da 
+    lista é uma str do arquivo
+
+    Arguments:
+        file {str} -- [description]
+
+    Returns:
+        List[str] -- [description]
+    """
     with open(file) as f:
         data = f.readlines()
-    for item in data[1:]:
-        item = item.strip("\n ")
-        item = item.split(";")
-        itemmod = models.Item(folha=folha,
-                              competencia=item[0].upper(),
-                              orgao=item[1].upper(),
-                              situacao=item[2].upper(),
-                              nome=item[3].upper(),
-                              cargo=item[5].upper(),
-                              remuneracao_base=str2float(item[6]),
-                              outras_verbas=str2float(item[7]),
-                              remuneracao_apos_deducoes_obrigatorias=str2float(
-                                  item[8]),
-                              vinculo=item[9].upper(),
-                              matricula=item[10])
-    return len(data[1:])
+    # ignora o cabeçalho do arquivo
+    return data[1:]
 
 
-@models.orm.db_session
-def init_db(files: Set[str]) -> None:
+# ok
+def all_files(path: str = None) -> List[str]:
+    """[summary]
 
-    f = set(models.orm.select(f.link for f in models.Folha))
-    files = files - f
+    Keyword Arguments:
+        path {str} -- [description] (default: {None})
 
-    for file in files:
-        print("inserindo file: ", file)
-        folha = models.Folha(arquivo_nome=namefromfile(file),
-                             quantidade_registros=0,
-                             link=file,
-                             gerado_analise=False)
-        qnt = insert_db_itens(folha, file)
-        print("itens inseridos: ", qnt)
-        folha.quantidade_registros = qnt
-        models.db.commit()
-
-
-###########################################################
-#                       util database
-###########################################################
-@models.orm.db_session
-def select_tipo(tipo: str) -> List[str]:
-    r = list(models.orm.select(
-        t.descricao for t in models.Tipo if t.tipo == tipo))
-    r.sort()
-    return r 
+    Returns:
+        Set[str] -- [description]
+    """
+    path = f"{os.getcwd()}/arquivos/" if not path else path
+    p = pathlib.Path(path)
+    # folhas (sem 13º)
+    files = {
+        namefile2date(str(f)) for f in p.iterdir() if f.is_file() and not "13" in f.stem
+    }
+    # ordenar os arquivos por data
+    files = sorted(files)
+    files = [date2filename(f, path) for f in files]
+    # folha apenas do 13º
+    files13 = [str(f) for f in p.iterdir() if f.is_file() and "13" in f.stem]
+    # une as duas folhas
+    files.extend(files13)
+    return files
 
 
-@models.orm.db_session
-def select_nome(situacao=None) -> List[str]:
-    if situacao:
-        nome = list(models.orm.select(
-            i.nome for i in models.Item 
-            if i.situacao == situacao).distinct())
+# ok
+def db_all_files():
+    arquivo = models.Arquivo()
+    fields = "descricao"
+    params = "WHERE 1"
+    dados = arquivo.select(fields, params)
+    dados = [i[0] for i in dados]
+    arquivo.close()
+    return dados
+
+
+# ok
+def get_new_files():
+    # lista de arquivos local
+    arquivos = all_files()
+    # arquivos inseridos no banco
+    arquivos_db = db_all_files()
+    # apenas arquivos que não foram inseridos
+    arquivos = [f for f in arquivos if not f.split("/")[-1] in arquivos_db]
+    print("quantidade de folhas a inserir:", len(arquivos))
+    return arquivos
+
+
+# ok
+def atualizar_banco() -> None:
+    arquivos = get_new_files()
+    # insere arquivo e folha no banco de dados
+    quantidades = []
+
+    folhadb = models.Folha()
+
+    for arq in arquivos:
+        print(f"inserindo folha: {arq}")
+        file = read_file(arq)
+        folha = format_file(file)
+        folhadb.insert(folha)
+        quantidades.append(len(folha))
+
+    folhadb.close()
+
+    if arquivos:
+        arquivodb = models.Arquivo()
+        # apenas nome do arquivo
+        arquivos = [i.split("/")[-1] for i in arquivos]
+        arquivos = list(zip(arquivos, quantidades))
+        arquivodb.insert(arquivos)
+        arquivodb.close()
+
+
+def db_all_orgao(competencia):
+    folhadb = models.Folha()
+    fields = "DISTINCT orgao"
+    params = f'WHERE competencia like "{competencia}"'
+    orgaos = folhadb.select(fields, params)
+    orgaos = [i[0] for i in orgaos]
+    folhadb.close()
+    return orgaos
+
+
+def db_maior_salario(
+    competencia, quantidade=50, remuneracao_por="rem_posdeducoes"
+) -> int:
+    orgaos = db_all_orgao(competencia)
+    if not orgaos:
+        return 0
+
+    ids = []
+    fields = "id"
+    query = "{};{};{};{}"
+
+    folhadb = models.Folha()
+    for orgao in orgaos:
+        params = f"""WHERE competencia like "{competencia}" and 
+        orgao like "{orgao}" 
+        ORDER BY {remuneracao_por} 
+        DESC LIMIT {quantidade}"""
+        data = folhadb.select(fields, params)
+        data = ";".join([str(i[0]) for i in data])
+        ids.append((query.format(fields, competencia, orgao, quantidade), data))
+    folhadb.close()
+    # from pprint import pprint
+    # pprint(ids)
+    consultadb = models.Consulta()
+    fields = "query"
+    params = "WHERE 1"
+
+    inseridos = [i[0] for i in consultadb.select(fields, params)]
+    # apenas os que nao foram inseridos no banco
+    ids = [i for i in ids if i[0] not in inseridos]
+
+    print(consultadb)
+    consultadb.insert(ids)
+    consultadb.close()
+    return len(ids)
+
+# [TODO] outras opcoes
+if __name__ == "__main__":
+    arg = None if len(sys.argv) <= 1 else sys.argv[1]
+    if arg == "update":
+        atualizar_banco()
     else:
-        nome = list(models.orm.select(i.nome for i in models.Item).distinct())
-        
-    nome.sort()
-    return nome
-
-
-###########################################################
-#                       FolhaMS
-###########################################################
-class FolhaMS:
-    def __init__(self):
-        self._query = None
-        self.item = None
-        self.res = {
-            'media_rem_base': 0.0,
-            'media_outras_verbas': 0.0,
-            'media_rem_apos': 0.0,
-            'soma_rem_base': 0.0,
-            'soma_outras_verbas': 0.0,
-            'soma_rem_apos': 0.0
-        }
-
-    def select(self, query) -> None:
-
-        # [TODO] insert here 
-        keys = ('cargo', 'situacao', 'orgao', 
-        'competencia', 'nome', 'vinculo', 'matricula')
-
-        if any((i for i in query.keys() if i not in keys)):
-            raise AttributeError('param sql invalid ')
-
-        nova_query = ''
-
-        for k, v in query.items():
-            if v:
-                nova_query += f' i.{k} == "{v}" and'
-
-        nova_query = nova_query.rstrip(' and')
-        sql = ' select i.id, i.remuneracao_base, i.outras_verbas,  '
-        sql += 'i.remuneracao_apos_deducoes_obrigatorias from item i '
-        sql += f'where ({nova_query})'
-        self._query = sql
-
-
-    def execute(self) -> None:
-        with models.orm.db_session:
-            itens = models.Item.select_by_sql(self._query)
-        
-        if qnt := len(itens):
-            s = sum([item.remuneracao_base for item in itens])
-            self.res['soma_rem_base'] = s
-            self.res['media_rem_base'] = s/qnt
-
-            s = sum([item.outras_verbas for item in itens])
-            self.res['soma_outras_verbas'] = s
-            self.res['media_outras_verbas'] = s/qnt
-
-            s = sum([item.remuneracao_apos_deducoes_obrigatorias for item in itens])
-            self.res['soma_rem_apos'] = s
-            self.res['media_rem_apos'] = s/qnt
-
-            self.itens = itens
-        else:
-            self.res = {
-            'media_rem_base': 0.0,
-            'media_outras_verbas': 0.0,
-            'media_rem_apos': 0.0,
-            'soma_rem_base': 0.0,
-            'soma_outras_verbas': 0.0,
-            'soma_rem_apos': 0.0
-        }
-            self.itens = None
+        print("""
+        FolhaMS - Folha de Pagamento do MS
+        Parametros
+        Para inserir os dados da folha no banco:
+        ----------------------------------------
+        python folhams.py update 
+        """)

@@ -1,47 +1,121 @@
-from pony import orm
+# .  Copyright (C) 2020   Jhonathan P. Banczek (jpbanczek@gmail.com)
+#
 
-db = orm.Database("sqlite", "database.sqlite3", create_db=True)
-
-
-class Folha(db.Entity):
-    arquivo_nome = orm.Required(str)
-    quantidade_registros = orm.Required(int)
-    link = orm.Required(str)
-    gerado_analise = orm.Required(bool)
-    itens = orm.Set('Item')
-    analise_folhas = orm.Set('AnaliseFolha')
+import os
+import sqlite3
+from typing import Iterable
+from sqls import SQLArquivo, SQLFolha, SQLConsulta
 
 
-class Item(db.Entity):
-    folha = orm.Required(Folha)
-    competencia = orm.Required(str)
-    orgao = orm.Required(str)
-    situacao = orm.Required(str)
-    nome = orm.Required(str)
-    cargo = orm.Required(str)
-    remuneracao_base = orm.Required(float)
-    outras_verbas = orm.Required(float)
-    remuneracao_apos_deducoes_obrigatorias = orm.Required(float)
-    vinculo = orm.Required(str)
-    matricula = orm.Required(str)
+__all__ = ["Arquivo", "Folha", "Consulta"]
 
 
-class AnaliseFolha(db.Entity):
-    folha = orm.Required(Folha)
-    tipo = orm.Required(str)
-    descricao = orm.Required(str)
-    competencia = orm.Required(str)
-    soma_rem_base = orm.Required(float)
-    soma_outras_verbas = orm.Required(float)
-    soma_rem_apos_deducoes = orm.Required(float)    
-    media_rem_base = orm.Required(float)
-    media_outras_verbas = orm.Required(float)
-    media_rem_apos_deducoes = orm.Required(float)
+class _DBError(ValueError):
+    pass
 
 
-class Tipo(db.Entity):
-    tipo = orm.Required(str)
-    descricao = orm.Required(str)
+class _DBModel:
+    def __init__(
+        self,
+        db_name: str = "base.sqlite3",
+        sql_create: str = None,
+        sql_insert: str = None,
+        sql_select: str = None,
+        sql_delete: str = None,
+    ):
+        self._db_path = os.path.join(os.path.dirname(__file__), db_name)
+        self._conn = sqlite3.connect(self._db_path)
+        self._cursor = self._conn.cursor()
+        self._sql_create = sql_create
+        self._sql_insert = sql_insert
+        self._sql_select = sql_select
+        self._sql_delete = sql_delete
+        self._create()
+
+    def _create(self):
+        try:
+            self._cursor.execute(self._sql_create)
+            self._conn.commit()
+        except:
+            self._conn.rollback()
+            raise _DBError("Problema ao criar tabela")
+
+    def insert(self, data: Iterable[Iterable]):
+        try:
+            self._cursor.executemany(self._sql_insert, data)
+            self._conn.commit()
+        except:
+            self._conn.rollback()
+            raise _DBError("Problema ao inserir dados na tabela")
+
+    def select(self, fields, params):
+        try:
+            data = self._cursor.execute(self._sql_select.format(fields, params))
+            data = data.fetchall()
+        except:
+            raise _DBError("Problema executar select")
+        return data
+
+    def delete(self, param):
+        try:
+            self._cursor.execute(self._sql_delete.format(param))
+            self._conn.commit()
+        except:
+            self._conn.rollback()
+            raise _DBError("Problema ao deletar dados")
+
+    def execute_sql(self, sql, params):
+        try:
+            data = self._cursor.execute(sql, params)
+            data = data.fetchall()
+        except:
+            self._conn.rollback()
+            raise _DBError("Problema ao executar sql")
+        return data
+
+    def executemany_sql(self, sql, params):
+        try:
+            data = self._cursor.executemany(sql, params)
+            data = data.fetchall()
+        except:
+            self._conn.rollback()
+            raise _DBError("Problema ao executar sql")
+        return data
+
+    def close(self):
+        self._cursor.close()
+        self._conn.commit()
+        self._conn.close()
 
 
-db.generate_mapping(create_tables=True)
+class Arquivo(_DBModel):
+    def __init__(self, db_name="base.sqlite3"):
+        super().__init__(
+            db_name=db_name,
+            sql_create=SQLArquivo.create,
+            sql_insert=SQLArquivo.insert,
+            sql_select=SQLArquivo.select,
+            sql_delete=SQLArquivo.delete,
+        )
+
+
+class Folha(_DBModel):
+    def __init__(self, db_name="base.sqlite3"):
+        super().__init__(
+            db_name=db_name,
+            sql_create=SQLFolha.create,
+            sql_insert=SQLFolha.insert,
+            sql_select=SQLFolha.select,
+            sql_delete=SQLFolha.delete,
+        )
+
+
+class Consulta(_DBModel):
+    def __init__(self, db_name="base.sqlite3"):
+        super().__init__(
+            db_name=db_name,
+            sql_create=SQLConsulta.create,
+            sql_insert=SQLConsulta.insert,
+            sql_select=SQLConsulta.select,
+            sql_delete=SQLConsulta.delete,
+        )
