@@ -3,7 +3,7 @@
 
 import os
 import sqlite3
-from typing import Iterable
+from typing import Iterable, List, Any
 from sqls import SQLArquivo, SQLFolha, SQLConsulta
 
 
@@ -34,7 +34,7 @@ class _DBModel:
         self._sql_update = sql_update
         self._create()
 
-    def _create(self):
+    def _create(self) -> None:
         try:
             self._cursor.execute(self._sql_create)
             self._conn.commit()
@@ -42,15 +42,19 @@ class _DBModel:
             self._conn.rollback()
             raise _DBError("Problema ao criar tabela")
 
-    def insert(self, data: Iterable[Iterable]):
+    def insert(self, data: Iterable[Iterable] = None) -> int:
+        lastrowid = None
         try:
-            self._cursor.executemany(self._sql_insert, data)
+            for d in data:
+                self._cursor.execute(self._sql_insert, d)
+                lastrowid = self._cursor.lastrowid
             self._conn.commit()
         except:
             self._conn.rollback()
             raise _DBError("Problema ao inserir dados na tabela")
+        return lastrowid
 
-    def select(self, fields, params):
+    def select(self, fields: str = None, params: str = None) -> List[Any]:
         try:
             data = self._cursor.execute(self._sql_select.format(fields, params))
             data = data.fetchall()
@@ -58,33 +62,15 @@ class _DBModel:
             raise _DBError("Problema executar select")
         return data
 
-    def delete(self, param):
+    def delete(self, params: str = None) -> None:
         try:
-            self._cursor.execute(self._sql_delete.format(param))
+            self._cursor.execute(self._sql_delete.format(params))
             self._conn.commit()
         except:
             self._conn.rollback()
             raise _DBError("Problema ao deletar dados")
 
-    # def execute_sql(self, sql, params):
-    #     try:
-    #         data = self._cursor.execute(sql, params)
-    #         data = data.fetchall()
-    #     except:
-    #         self._conn.rollback()
-    #         raise _DBError("Problema ao executar sql")
-    #     return data
-
-    # def executemany_sql(self, sql, params):
-    #     try:
-    #         data = self._cursor.executemany(sql, params)
-    #         data = data.fetchall()
-    #     except:
-    #         self._conn.rollback()
-    #         raise _DBError("Problema ao executar sql")
-    #     return data
-
-    def update(self, field_set, params):
+    def update(self, field_set: str = None, params: str = None) -> None:
         try:
             sql = self._sql_update.format(field_set, params)
             self._cursor.execute(sql)
@@ -106,8 +92,19 @@ class Arquivo(_DBModel):
             sql_insert=SQLArquivo.insert,
             sql_select=SQLArquivo.select,
             sql_delete=SQLArquivo.delete,
-            sql_update=SQLArquivo.update
+            sql_update=SQLArquivo.update,
         )
+
+    def delete(self, params: str = None) -> None:
+        super().delete(params=params)
+        try:
+            sql = """DELETE FROM Folha WHERE Folha.id in 
+            (SELECT Folha.id FROM Folha WHERE Folha.id_arquivo not in 
+            (select Arquivo.id from Arquivo));"""
+            self._cursor.execute(sql)
+            self._conn.commit()
+        except:
+            raise _DBError("Problema executar exclusão do relacionamento ")
 
 
 class Folha(_DBModel):
@@ -118,7 +115,7 @@ class Folha(_DBModel):
             sql_insert=SQLFolha.insert,
             sql_select=SQLFolha.select,
             sql_delete=SQLFolha.delete,
-            sql_update=SQLFolha.update
+            sql_update=SQLFolha.update,
         )
 
 
@@ -130,5 +127,5 @@ class Consulta(_DBModel):
             sql_insert=SQLConsulta.insert,
             sql_select=SQLConsulta.select,
             sql_delete=SQLConsulta.delete,
-            sql_update=SQLConsulta.update
+            sql_update=SQLConsulta.update,
         )

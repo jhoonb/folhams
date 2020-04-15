@@ -6,15 +6,21 @@ from models import Arquivo, Folha, Consulta
 
 
 class TestModels(unittest.TestCase):
+
     def test_Arquivo(self):
         # criar banco
         arquivo = Arquivo(db_name="test.sqlite3")
+        f = Folha(db_name="test.sqlite3")
+        f.close()
         param = "WHERE 1"
         # delete
         arquivo.delete(param)
         data = [("arq1", 1_001), ("arq2", 2_001)]
         # insert
-        arquivo.insert(data)
+        ultimo_id = arquivo.insert(data)
+        self.assertIsNot(ultimo_id, 0)
+        self.assertIsNot(ultimo_id, None)
+
         fields, params = "descricao, itens", "where 1"
         # select
         data_db = arquivo.select(fields, params)
@@ -40,6 +46,7 @@ class TestModels(unittest.TestCase):
         arquivo.close()
 
     def test_Folha(self):
+
         folha = Folha(db_name="test.sqlite3")
         param = "WHERE 1"
         folha.delete(param)
@@ -57,6 +64,7 @@ class TestModels(unittest.TestCase):
                 1235.9,
                 "vinculox",
                 "matriculax",
+                1
             ),
             (
                 "02/2012",
@@ -70,6 +78,7 @@ class TestModels(unittest.TestCase):
                 2222.2,
                 "vinculoy",
                 "matriculay",
+                2
             ),
             (
                 "03/2012",
@@ -83,6 +92,7 @@ class TestModels(unittest.TestCase):
                 3333.3,
                 "vinculoz",
                 "matriculaz",
+                2
             ),
             (
                 "04/2012",
@@ -96,13 +106,17 @@ class TestModels(unittest.TestCase):
                 4444.4,
                 "vinculow",
                 "matriculaw",
+                1
             ),
         ]
 
-        folha.insert(datas)
+        ultimo_id = folha.insert(datas)
+        self.assertIsNot(ultimo_id, 0)
+        self.assertIsNot(ultimo_id, None)
 
         fields = """competencia, orgao, situacao, nome, cpf, cargo, 
-        rem_base, outras_verbas, rem_posdeducoes, vinculo, matricula"""
+        rem_base, outras_verbas, rem_posdeducoes, 
+        vinculo, matricula, id_arquivo"""
         params = "where 1"
         data_db = folha.select(fields, params)
         self.assertEqual(datas, data_db)
@@ -126,16 +140,23 @@ class TestModels(unittest.TestCase):
         param = "WHERE 1"
         consulta.delete(param)
         data = [
-            ("query1", "resultado1"),
-            ("query2", "resultado2"),
-            ("query3", "resultado3"),
-            ("query4", "resultado4"),
+            ("query1", "resultado1", False),
+            ("query2", "resultado2", False),
+            ("query3", "resultado3", False),
+            ("query4", "resultado4", True),
         ]
-        consulta.insert(data)
+        ultimo_id = consulta.insert(data)
+        self.assertIsNot(ultimo_id, 0)
+        self.assertIsNot(ultimo_id, None)
 
         fields, params = "resultado", "where 1"
         data_db = consulta.select(fields, params)
         self.assertEqual([(i[1],) for i in data], data_db)
+
+        # testar status
+        fields, params = "query", "where status = 1"
+        data_db = consulta.select(fields, params)
+        self.assertEqual(data[3][0], data_db[0][0])
 
         fields, params = "query", "where 1"
         data_db = consulta.select(fields, params)

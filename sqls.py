@@ -6,13 +6,14 @@ __all__ = ["SQLArquivo", "SQLFolha", "SQLConsulta"]
 
 class SQLArquivo:
     create = """CREATE TABLE IF NOT EXISTS "Arquivo" 
-  ("descricao" TEXT NOT NULL PRIMARY KEY, 
+  ("id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "descricao" TEXT NOT NULL, 
   "itens" INTEGER NOT NULL);"""
 
     insert = """INSERT INTO Arquivo 
   (descricao, itens) VALUES (?, ?); """
 
-    delete = """DELETE FROM Arquivo {};"""
+    delete = """DELETE FROM Arquivo {}; """
 
     select = """SELECT {} FROM Arquivo {}"""
 
@@ -32,12 +33,13 @@ class SQLFolha:
     "outras_verbas" REAL NOT NULL,
     "rem_posdeducoes" REAL NOT NULL,
     "vinculo" TEXT NOT NULL,
-    "matricula" TEXT NOT NULL); """
+    "matricula" TEXT NOT NULL,
+    "id_arquivo" INTEGER NOT NULL); """
 
     insert = """INSERT INTO Folha (competencia, orgao, 
   situacao, nome, cpf, cargo, rem_base, outras_verbas,
-  rem_posdeducoes, vinculo, matricula) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); """
+  rem_posdeducoes, vinculo, matricula, id_arquivo) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); """
 
     delete = """DELETE FROM Folha {};"""
 
@@ -50,10 +52,11 @@ class SQLConsulta:
     create = """CREATE TABLE IF NOT EXISTS "Consulta" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT,
     "query" TEXT NOT NULL,
-    "resultado" TEXT NOT NULL);"""
+    "resultado" TEXT NOT NULL,
+    "status" INTEGER NOT NULL);"""
 
     insert = """INSERT INTO Consulta 
-  (query, resultado) VALUES (?, ?); """
+  (query, resultado, status) VALUES (?, ?, ?); """
 
     delete = """DELETE FROM Consulta {};"""
 
