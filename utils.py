@@ -6,7 +6,10 @@ import pathlib
 import datetime
 from typing import List, Tuple
 
-__all__ = ["str2float", "namefile2date", "date2filename", "format_file", "all_files"]
+__all__ = ["str2float", 
+"namefile2date", 
+"date2filename", 
+"format_file", "all_files"]
 
 
 def str2float(s: str) -> float:

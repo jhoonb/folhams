@@ -4,16 +4,67 @@
 import os
 import sqlite3
 from typing import Iterable, List, Any
-from sqls import SQLArquivo, SQLFolha, SQLConsulta
 
 
-__all__ = ["Arquivo", "Folha", "Consulta"]
+__all__ = ["Arquivo", "Folha"]
 
-
+#####################################################################
+# class exception
+#####################################################################
 class _DBError(ValueError):
     pass
 
 
+#####################################################################
+# classes SQLs
+#####################################################################
+class _SQLArquivo:
+    create = """CREATE TABLE IF NOT EXISTS "Arquivo" 
+  ("id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "descricao" TEXT NOT NULL, 
+  "itens" INTEGER NOT NULL);"""
+
+    insert = """INSERT INTO Arquivo 
+  (descricao, itens) VALUES (?, ?); """
+
+    delete = """DELETE FROM Arquivo {}; """
+
+    select = """SELECT {} FROM Arquivo {}"""
+
+    update = """ UPDATE Arquivo SET {} {}"""
+
+
+class _SQLFolha:
+    create = """CREATE TABLE IF NOT EXISTS "Folha" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "competencia" TEXT NOT NULL,
+    "orgao" TEXT NOT NULL,
+    "situacao" TEXT NOT NULL,
+    "nome" TEXT NOT NULL,
+    "cpf" TEXT NOT NULL,
+    "cargo" TEXT NOT NULL,
+    "rem_base" REAL NOT NULL,
+    "outras_verbas" REAL NOT NULL,
+    "rem_posdeducoes" REAL NOT NULL,
+    "vinculo" TEXT NOT NULL,
+    "matricula" TEXT NOT NULL,
+    "id_arquivo" INTEGER NOT NULL); """
+
+    insert = """INSERT INTO Folha (competencia, orgao, 
+  situacao, nome, cpf, cargo, rem_base, outras_verbas,
+  rem_posdeducoes, vinculo, matricula, id_arquivo) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); """
+
+    delete = """DELETE FROM Folha {};"""
+
+    select = """SELECT {} FROM Folha f {}"""
+
+    update = """ UPDATE Folha SET {} {}"""
+
+
+#####################################################################
+# class model abstract
+#####################################################################
 class _DBModel:
     def __init__(
         self,
@@ -84,15 +135,18 @@ class _DBModel:
         self._conn.close()
 
 
+#####################################################################
+# classes
+#####################################################################
 class Arquivo(_DBModel):
     def __init__(self, db_name="base.sqlite3"):
         super().__init__(
             db_name=db_name,
-            sql_create=SQLArquivo.create,
-            sql_insert=SQLArquivo.insert,
-            sql_select=SQLArquivo.select,
-            sql_delete=SQLArquivo.delete,
-            sql_update=SQLArquivo.update,
+            sql_create=_SQLArquivo.create,
+            sql_insert=_SQLArquivo.insert,
+            sql_select=_SQLArquivo.select,
+            sql_delete=_SQLArquivo.delete,
+            sql_update=_SQLArquivo.update,
         )
 
     def delete(self, params: str = None) -> None:
@@ -111,21 +165,9 @@ class Folha(_DBModel):
     def __init__(self, db_name="base.sqlite3"):
         super().__init__(
             db_name=db_name,
-            sql_create=SQLFolha.create,
-            sql_insert=SQLFolha.insert,
-            sql_select=SQLFolha.select,
-            sql_delete=SQLFolha.delete,
-            sql_update=SQLFolha.update,
-        )
-
-
-class Consulta(_DBModel):
-    def __init__(self, db_name="base.sqlite3"):
-        super().__init__(
-            db_name=db_name,
-            sql_create=SQLConsulta.create,
-            sql_insert=SQLConsulta.insert,
-            sql_select=SQLConsulta.select,
-            sql_delete=SQLConsulta.delete,
-            sql_update=SQLConsulta.update,
+            sql_create=_SQLFolha.create,
+            sql_insert=_SQLFolha.insert,
+            sql_select=_SQLFolha.select,
+            sql_delete=_SQLFolha.delete,
+            sql_update=_SQLFolha.update,
         )
