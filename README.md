@@ -8,15 +8,19 @@ Dados obtidos no [portal da transparência](http://www.transparencia.ms.gov.br/)
 Dados Abertos: <http://www.dados.ms.gov.br/>  
 *Dados a partir de 2018.*
 
-* [Python 3.8.2](https://python.org)
+* [Python 3.8](https://python.org)
 * [SQLite 3](https://www.sqlite.org/index.html)
 * Google Sheet
 
 
-### Resultados podem ser vistos em: [jhoonb.github.io/ms](jhoonb.github.io/ms)
+Dados atualizados até o mês 09/2020*
+====
 
+Resultados podem ser vistos em: [jhoonb.github.io/ms](jhoonb.github.io/ms)
+===
 
-### Teste
+Teste
+===
 
 Execute o teste:
 
@@ -24,15 +28,16 @@ Execute o teste:
 $ python -m unittest -v
 ```
 
-### Gerar/atualizar Banco de Dados:
-
+Gerar/atualizar Banco de Dados:
+===
 
 ```
 $ python folhams.py
 ```
 
 
-### Tabela Arquivo
+Tabela Arquivo
+===
 
 itens = quantidade de itens no arquivo (linhas sem cabeçalho)
 
@@ -44,7 +49,9 @@ itens = quantidade de itens no arquivo (linhas sem cabeçalho)
  
 
 
-### Tabela Folha
+Tabela Folha
+===
+
 
 Relação Mensal das informações referentes à remuneração dos servidores públicos – ativos e inativos –, dos empregados públicos e dos pensionistas da Administração Pública Direta e Indireta.
 
@@ -69,15 +76,16 @@ id_arquivo relaciona o item com o arquivo
 
 Observação sobre os campos:
 
-- **Remuneração Base:** (rem_base) Composta pelas parcelas remuneratórias correspondentes ao subsídio, vencimento ou soldo, acrescidas das vantagens pecuniárias pessoais, das vantagens inerentes ao cargo e das vantagens percebidas em caráter permanente.
+- **Remuneração Base:** (`rem_base`) Composta pelas parcelas remuneratórias correspondentes ao subsídio, vencimento ou soldo, acrescidas das vantagens pecuniárias pessoais, das vantagens inerentes ao cargo e das vantagens percebidas em caráter permanente.
 
-- **Outras Verbas:** (outras_verbas) Valores pagos em decorrência de acertos de meses anteriores, exercícios anteriores e decisões judiciais, bem como aqueles referentes à gratificação natalina, ao adicional de férias e às verbas indenizatórias.
+- **Outras Verbas:** (`outras_verbas`) Valores pagos em decorrência de acertos de meses anteriores, exercícios anteriores e decisões judiciais, bem como aqueles referentes à gratificação natalina, ao adicional de férias e às verbas indenizatórias.
 
-- **Remuneração Após Deduções Obrigatórias:** (rem\_pos\_deducoes_obrigatorias) Valor da remuneração, descontadas a dedução do teto constitucional e as deduções obrigatórias.
+- **Remuneração Após Deduções Obrigatórias:** (`rem\_posdeducoes`) Valor da remuneração, descontadas a dedução do teto constitucional e as deduções obrigatórias.
 
 
+Situação
+===
 
-### situação:
 
 | SITUAÇÃO |
 | ---- |
@@ -86,7 +94,9 @@ Observação sobre os campos:
 |INATIVO - PENSÃO POR MORTE |
 
 
-### orgão:
+Orgão
+===
+
 
 | ORGÃO |
 | ---- |
@@ -127,7 +137,9 @@ Observação sobre os campos:
 |UEMS |
 
 
-### vínculo:
+Vínculo
+===
+
 
 | VÍNCULO |
 | ----------------- |
@@ -143,7 +155,9 @@ Observação sobre os campos:
 |SERVIDOR REGIME CLT |
 
 
-### cargo: 
+Cargo
+===
+
 
 | CARGO |
 | --------------------------------- |
@@ -381,6 +395,7 @@ Observação sobre os campos:
 |VICE-DIRETOR PRESIDENTE |
 |VICE-GOVERNADOR |
 |VICE-REITOR |
+
 
 
 :mag_right:
